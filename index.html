@@ -14,20 +14,16 @@
         import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
         import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
-        // Firebase 配置 - 請替換為您的配置
-
-
-		const firebaseConfig = {
-		  apiKey: "AIzaSyBQM-iulKQP_-TpX0uP0Q75An0ugs9q-Y0",
-		  authDomain: "ndcphoto-66e17.firebaseapp.com",
-		  projectId: "ndcphoto-66e17",
-		  storageBucket: "ndcphoto-66e17.firebasestorage.app",
-		  messagingSenderId: "747712936503",
-		  appId: "1:747712936503:web:05ff8734fb1c7e930e9db2",
-		  measurementId: "G-5V3S580BXN"
-		};
-
-
+        // Firebase 配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyBQM-iulKQP_-TpX0uP0Q75An0ugs9q-Y0",
+            authDomain: "ndcphoto-66e17.firebaseapp.com",
+            projectId: "ndcphoto-66e17",
+            storageBucket: "ndcphoto-66e17.firebasestorage.app",
+            messagingSenderId: "747712936503",
+            appId: "1:747712936503:web:05ff8734fb1c7e930e9db2",
+            measurementId: "G-5V3S580BXN"
+        };
 
         // 初始化 Firebase
         const app = initializeApp(firebaseConfig);
@@ -102,6 +98,58 @@
                 <i class="fab fa-google"></i>
                 <span>使用 Google 登入</span>
             </button>
+            
+            <div class="mt-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+                <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                    <i class="fas fa-info-circle mr-2"></i>設置提示
+                </h4>
+                <p class="text-sm text-blue-700 dark:text-blue-300">
+                    如果登入失敗，請確保已正確配置 Firebase。
+                    <button onclick="showSetupGuide()" class="underline hover:no-underline">查看設置指南</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設置指南模態框 -->
+    <div id="setupGuide" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">Firebase 設置指南</h3>
+                    <button onclick="closeSetupGuide()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-4 text-sm text-gray-700 dark:text-gray-300">
+                    <div>
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">步驟 1: 創建 Firebase 項目</h4>
+                        <p>1. 前往 <a href="https://console.firebase.google.com/" target="_blank" class="text-blue-600 hover:underline">Firebase Console</a></p>
+                        <p>2. 點擊「創建項目」或「Add project」</p>
+                        <p>3. 輸入項目名稱並完成創建</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">步驟 2: 獲取配置</h4>
+                        <p>1. 在項目設置中，點擊「&lt;/&gt; Web」圖標</p>
+                        <p>2. 註冊應用程式，獲取配置物件</p>
+                        <p>3. 複製 firebaseConfig 並替換代碼中的配置</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">步驟 3: 啟用服務</h4>
+                        <p>1. <strong>Authentication</strong>: 啟用 Google 登入方式</p>
+                        <p>2. <strong>Firestore Database</strong>: 創建資料庫</p>
+                        <p>3. <strong>Storage</strong>: 啟用檔案儲存</p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">步驟 4: 設置授權域名</h4>
+                        <p>在 Authentication &gt; Settings &gt; Authorized domains 中添加您的域名</p>
+                        <p>例如：your-username.github.io</p>
+                    </div>
+                    <div class="bg-yellow-50 dark:bg-yellow-900 p-3 rounded">
+                        <p class="font-semibold">注意：請將代碼中的管理員郵箱地址更改為您的實際郵箱</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -215,6 +263,24 @@
                 <h2 class="text-2xl font-bold text-green-800 dark:text-green-200 mb-2">訂單提交成功！</h2>
                 <p class="text-green-700 dark:text-green-300">感謝您的訂購，我們會盡快處理您的訂單。</p>
             </div>
+        </div>
+    </div>
+
+    <!-- 第一次管理員設置頁面 -->
+    <div id="firstAdminSetup" class="hidden min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-100 dark:from-gray-800 dark:to-gray-900">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md text-center">
+            <i class="fas fa-crown text-yellow-500 text-6xl mb-4"></i>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">歡迎！</h1>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">您是第一個使用此系統的用戶，已自動設置為管理員。</p>
+            <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg mb-6">
+                <p class="text-sm text-blue-700 dark:text-blue-300">
+                    <strong>您的管理員帳號：</strong><br>
+                    <span id="adminEmailDisplay" class="font-mono"></span>
+                </p>
+            </div>
+            <button onclick="proceedToAdmin()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                <i class="fas fa-arrow-right mr-2"></i>開始使用管理員功能
+            </button>
         </div>
     </div>
 
@@ -359,8 +425,8 @@
         let signatureCanvas = null;
         let signatureCtx = null;
 
-        // 管理員郵箱列表 - 請根據需要修改
-        const adminEmails = ['ndcsows@ndc.edu.hk'];
+        // 管理員郵箱列表 - 第一個登入的用戶會自動成為管理員
+        let adminEmails = ['ndcsows@ndc.edu.hk']; // 主要管理員
 
         // 初始化應用程式
         window.addEventListener('load', function() {
@@ -393,9 +459,26 @@
             try {
                 const result = await signInWithPopup(firebaseAuth, provider);
                 currentUser = result.user;
+                console.log('登入成功:', currentUser.email);
             } catch (error) {
-                console.error('登入失敗:', error);
-                showAlert('登入失敗，請重試');
+                console.error('登入失敗詳細信息:', error);
+                let errorMessage = '登入失敗，請重試';
+                
+                if (error.code === 'auth/configuration-not-found') {
+                    errorMessage = 'Firebase 配置錯誤，請檢查 firebaseConfig 設置';
+                } else if (error.code === 'auth/invalid-api-key') {
+                    errorMessage = 'Firebase API Key 無效，請檢查配置';
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    errorMessage = '網域未授權，請在 Firebase Console 中添加此域名';
+                } else if (error.code === 'auth/popup-blocked') {
+                    errorMessage = '彈出視窗被阻擋，請允許彈出視窗後重試';
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = '用戶取消了登入流程';
+                } else if (error.message.includes('configuration')) {
+                    errorMessage = 'Firebase 尚未正確配置，請按照設置指南完成配置';
+                }
+                
+                showAlert(errorMessage);
             }
         }
 
@@ -403,9 +486,20 @@
         async function checkUserRole(user) {
             const email = user.email;
             
+            // 首先檢查是否已有管理員設置
+            await loadAdminSettings();
+            
             if (adminEmails.includes(email)) {
                 showAdminPage();
             } else {
+                // 檢查是否為第一個用戶（自動設置為管理員）
+                const isFirstUser = await checkIfFirstUser();
+                if (isFirstUser) {
+                    await setFirstAdmin(email);
+                    showFirstAdminSetup();
+                    return;
+                }
+                
                 const studentDoc = await getDoc(doc(firebaseDB, 'students', email));
                 if (studentDoc.exists()) {
                     currentStudent = studentDoc.data();
@@ -413,6 +507,49 @@
                 } else {
                     showStudentNotRegistered();
                 }
+            }
+        }
+
+        // 載入管理員設置
+        async function loadAdminSettings() {
+            try {
+                const adminDoc = await getDoc(doc(firebaseDB, 'settings', 'admins'));
+                if (adminDoc.exists()) {
+                    adminEmails = adminDoc.data().emails || ['admin@example.com'];
+                }
+            } catch (error) {
+                console.error('載入管理員設置失敗:', error);
+            }
+        }
+
+        // 檢查是否為第一個用戶
+        async function checkIfFirstUser() {
+            try {
+                // 檢查是否有任何學生資料
+                const studentsSnapshot = await getDocs(collection(firebaseDB, 'students'));
+                // 檢查是否有任何訂單
+                const ordersSnapshot = await getDocs(collection(firebaseDB, 'orders'));
+                // 檢查是否有管理員設置
+                const adminDoc = await getDoc(doc(firebaseDB, 'settings', 'admins'));
+                
+                return studentsSnapshot.empty && ordersSnapshot.empty && !adminDoc.exists();
+            } catch (error) {
+                console.error('檢查首次用戶失敗:', error);
+                return false;
+            }
+        }
+
+        // 設置第一個管理員
+        async function setFirstAdmin(email) {
+            try {
+                adminEmails = [email];
+                await setDoc(doc(firebaseDB, 'settings', 'admins'), {
+                    emails: adminEmails,
+                    createdAt: new Date(),
+                    createdBy: email
+                });
+            } catch (error) {
+                console.error('設置管理員失敗:', error);
             }
         }
 
@@ -453,10 +590,21 @@
             loadOrdersForAdmin();
         }
 
+        function showFirstAdminSetup() {
+            hideAllPages();
+            document.getElementById('firstAdminSetup').classList.remove('hidden');
+            document.getElementById('adminEmailDisplay').textContent = currentUser.email;
+        }
+
+        function proceedToAdmin() {
+            showAdminPage();
+        }
+
         function hideAllPages() {
             document.getElementById('loadingScreen').classList.add('hidden');
             document.getElementById('loginPage').classList.add('hidden');
             document.getElementById('studentPage').classList.add('hidden');
+            document.getElementById('firstAdminSetup').classList.add('hidden');
             document.getElementById('adminPage').classList.add('hidden');
         }
 
@@ -843,6 +991,14 @@
                 </div>
             `;
             document.body.appendChild(modal);
+        }
+
+        function showSetupGuide() {
+            document.getElementById('setupGuide').classList.remove('hidden');
+        }
+
+        function closeSetupGuide() {
+            document.getElementById('setupGuide').classList.add('hidden');
         }
     </script>
 </body>
