@@ -11,31 +11,26 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-        import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, deleteDoc, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-        // Firebase 配置
+        // Firebase 配置 - 僅使用 Auth 和 Firestore
         const firebaseConfig = {
             apiKey: "AIzaSyBQM-iulKQP_-TpX0uP0Q75An0ugs9q-Y0",
             authDomain: "ndcphoto-66e17.firebaseapp.com",
             projectId: "ndcphoto-66e17",
-            storageBucket: "ndcphoto-66e17.firebasestorage.app",
             messagingSenderId: "747712936503",
-            appId: "1:747712936503:web:05ff8734fb1c7e930e9db2",
-            measurementId: "G-5V3S580BXN"
+            appId: "1:747712936503:web:05ff8734fb1c7e930e9db2"
         };
 
         // 初始化 Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const storage = getStorage(app);
         const provider = new GoogleAuthProvider();
 
         // 將 Firebase 服務掛載到 window 對象以供全局使用
         window.firebaseAuth = auth;
         window.firebaseDB = db;
-        window.firebaseStorage = storage;
         window.GoogleAuthProvider = GoogleAuthProvider;
         window.signInWithPopup = signInWithPopup;
         window.onAuthStateChanged = onAuthStateChanged;
@@ -46,12 +41,10 @@
         window.getDoc = getDoc;
         window.getDocs = getDocs;
         window.addDoc = addDoc;
+        window.deleteDoc = deleteDoc;
         window.query = query;
         window.where = where;
         window.orderBy = orderBy;
-        window.ref = ref;
-        window.uploadBytes = uploadBytes;
-        window.getDownloadURL = getDownloadURL;
         window.provider = provider;
     </script>
 
@@ -205,35 +198,45 @@
                     </div>
                 </div>
 
-                <!-- 已確認狀態 -->
+                <!-- 已確認狀態和訂購選項 -->
                 <div id="photoConfirmed" class="hidden text-center mb-6">
-                    <div class="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 rounded-lg">
+                    <div class="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 rounded-lg mb-4">
                         <i class="fas fa-check-circle mr-2"></i>
                         <span>照片已確認</span>
+                    </div>
+                    
+                    <!-- 訂購選項 -->
+                    <div class="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <p class="text-lg font-semibold mb-4">請選擇訂購數量：</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="border dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors" onclick="selectOrder(0)">
+                                <div class="flex items-center mb-2">
+                                    <input type="radio" name="orderOption" value="0" class="mr-2">
+                                    <h3 class="text-lg font-semibold">0打照片</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-blue-600">免費</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">只確認照片</p>
+                            </div>
+                            <div class="border dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors" onclick="selectOrder(1)">
+                                <div class="flex items-center mb-2">
+                                    <input type="radio" name="orderOption" value="1" class="mr-2">
+                                    <h3 class="text-lg font-semibold">1打照片</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-green-600">$<span id="price1">13</span></p>
+                            </div>
+                            <div class="border dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors" onclick="selectOrder(2)">
+                                <div class="flex items-center mb-2">
+                                    <input type="radio" name="orderOption" value="2" class="mr-2">
+                                    <h3 class="text-lg font-semibold">2打照片</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-green-600">$<span id="price2">20</span></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 訂購區域 -->
-            <div id="orderSection" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-                <h2 class="text-2xl font-bold mb-4">訂購選項</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div class="border dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors" onclick="selectOrder(1)">
-                        <div class="flex items-center mb-2">
-                            <input type="radio" name="orderOption" value="1" class="mr-2">
-                            <h3 class="text-lg font-semibold">1打照片</h3>
-                        </div>
-                        <p class="text-2xl font-bold text-green-600">$<span id="price1">13</span></p>
-                    </div>
-                    <div class="border dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors" onclick="selectOrder(2)">
-                        <div class="flex items-center mb-2">
-                            <input type="radio" name="orderOption" value="2" class="mr-2">
-                            <h3 class="text-lg font-semibold">2打照片</h3>
-                        </div>
-                        <p class="text-2xl font-bold text-green-600">$<span id="price2">20</span></p>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- 簽名區域 -->
             <div id="signatureSection" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
@@ -251,10 +254,45 @@
             </div>
 
             <!-- 已提交訂單 -->
-            <div id="orderSubmitted" class="hidden bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-6 text-center">
-                <i class="fas fa-clock text-blue-500 text-4xl mb-4"></i>
-                <h2 class="text-xl font-bold mb-2">訂單已提交</h2>
-                <p class="text-gray-700 dark:text-gray-300">您的訂單正在處理中，感謝您的訂購！</p>
+            <div id="orderSubmitted" class="hidden bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-6">
+                <div class="text-center mb-6">
+                    <i class="fas fa-check-circle text-blue-500 text-4xl mb-4"></i>
+                    <h2 class="text-xl font-bold mb-2">您的訂單</h2>
+                </div>
+                
+                <!-- 訂單詳情 -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">訂購數量</p>
+                            <p class="font-semibold" id="currentOrderQuantity">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">價格</p>
+                            <p class="font-semibold text-green-600" id="currentOrderPrice">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">訂購時間</p>
+                            <p class="text-sm" id="currentOrderTime">-</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">訂單狀態</p>
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                                已提交
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 操作按鈕 -->
+                <div class="flex justify-center space-x-4">
+                    <button onclick="reChoose()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                        <i class="fas fa-edit mr-2"></i>重新選擇
+                    </button>
+                    <button onclick="viewOrderSignature()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg">
+                        <i class="fas fa-eye mr-2"></i>查看簽名
+                    </button>
+                </div>
             </div>
 
             <!-- 完成訊息 -->
@@ -313,8 +351,11 @@
                         <button onclick="switchTab('pricing')" class="admin-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
                             <i class="fas fa-dollar-sign mr-2"></i>價格設定
                         </button>
-                        <button onclick="switchTab('orders')" class="admin-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                            <i class="fas fa-shopping-cart mr-2"></i>訂單管理
+                        <button onclick="switchTab('batch')" class="admin-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                            <i class="fas fa-upload mr-2"></i>批次上傳
+                        </button>
+                        <button onclick="switchTab('students')" class="admin-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                            <i class="fas fa-users mr-2"></i>學生狀態
                         </button>
                     </nav>
                 </div>
@@ -374,28 +415,108 @@
                 </div>
             </div>
 
-            <!-- 訂單管理標籤 -->
-            <div id="ordersTab" class="admin-tab-content hidden">
+            <!-- 批次上傳標籤 -->
+            <div id="batchTab" class="admin-tab-content hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold mb-4">批次上傳學生資料</h2>
+                    
+                    <!-- 使用說明 -->
+                    <div class="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-6">
+                        <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                            <i class="fas fa-info-circle mr-2"></i>使用說明
+                        </h3>
+                        <div class="text-sm text-blue-700 dark:text-blue-300 space-y-2">
+                            <p>1. 準備 CSV 檔案，包含以下欄位（第一行為標題）：</p>
+                            <p class="ml-4 font-mono bg-white dark:bg-gray-800 p-2 rounded">班別,學號,姓名,郵箱,照片網址</p>
+                            <p>2. 照片網址可以是：網絡圖片鏈接 或 base64 格式</p>
+                            <p>3. 系統會自動檢查重複郵箱，跳過已存在的學生</p>
+                            <p>4. 建議分批上傳，每次不超過 50 名學生</p>
+                        </div>
+                        <div class="mt-3">
+                            <button onclick="downloadCSVTemplate()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm">
+                                <i class="fas fa-download mr-2"></i>下載 CSV 範本
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 檔案上傳區域 -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">選擇 CSV 檔案</label>
+                        <input type="file" id="csvFileInput" accept=".csv" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
+                    </div>
+
+                    <!-- 預覽區域 -->
+                    <div id="csvPreviewSection" class="hidden mb-6">
+                        <h3 class="text-lg font-semibold mb-3">資料預覽</h3>
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                            <p class="text-sm">找到 <span id="csvRowCount" class="font-bold text-blue-600">0</span> 筆學生資料</p>
+                        </div>
+                        <div class="overflow-x-auto max-h-64 border border-gray-200 dark:border-gray-600 rounded-lg">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">班別</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">學號</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">姓名</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">郵箱</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">照片</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="csvPreviewBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 上傳按鈕 -->
+                    <div class="flex space-x-4">
+                        <button onclick="processBatchUpload()" id="batchUploadBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fas fa-upload mr-2"></i>開始批次上傳
+                        </button>
+                        <button onclick="clearBatchUpload()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium">
+                            <i class="fas fa-times mr-2"></i>清除
+                        </button>
+                    </div>
+
+                    <!-- 進度顯示 -->
+                    <div id="batchUploadProgress" class="hidden mt-6">
+                        <h3 class="text-lg font-semibold mb-3">上傳進度</h3>
+                        <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-4">
+                            <div id="progressBar" class="bg-blue-500 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            進度：<span id="progressText">0 / 0</span>
+                        </div>
+                        <div id="uploadResults" class="space-y-2">
+                            <!-- 上傳結果會在這裡顯示 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 學生狀態標籤 -->
+            <div id="studentsTab" class="admin-tab-content hidden">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold">訂單管理</h2>
-                        <button onclick="downloadOrders()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
-                            <i class="fas fa-download mr-2"></i>下載訂單資料
+                        <h2 class="text-2xl font-bold">學生狀態概覽</h2>
+                        <button onclick="downloadStudentStatus()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-download mr-2"></i>下載學生狀態
                         </button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">學生</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">照片確認</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">班別</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">學號</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">姓名</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">照片正確否？</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">訂購數量</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">價格</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">時間</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">訂購價錢</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">簽名</th>
                                 </tr>
                             </thead>
-                            <tbody id="ordersTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody id="studentsTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             </tbody>
                         </table>
                     </div>
@@ -420,6 +541,7 @@
         // 全局變數
         let currentUser = null;
         let currentStudent = null;
+        let currentOrder = null; // 儲存當前訂單
         let pricing = { price1: 13, price2: 20 };
         let isDrawing = false;
         let signatureCanvas = null;
@@ -527,12 +649,12 @@
             try {
                 // 檢查是否有任何學生資料
                 const studentsSnapshot = await getDocs(collection(firebaseDB, 'students'));
-                // 檢查是否有任何訂單
-                const ordersSnapshot = await getDocs(collection(firebaseDB, 'orders'));
+                // 檢查是否有任何學生記錄
+                const recordsSnapshot = await getDocs(collection(firebaseDB, 'student_records'));
                 // 檢查是否有管理員設置
                 const adminDoc = await getDoc(doc(firebaseDB, 'settings', 'admins'));
                 
-                return studentsSnapshot.empty && ordersSnapshot.empty && !adminDoc.exists();
+                return studentsSnapshot.empty && recordsSnapshot.empty && !adminDoc.exists();
             } catch (error) {
                 console.error('檢查首次用戶失敗:', error);
                 return false;
@@ -587,7 +709,6 @@
             document.getElementById('adminAvatar').src = currentUser.photoURL || '';
             
             loadPricingForAdmin();
-            loadOrdersForAdmin();
         }
 
         function showFirstAdminSetup() {
@@ -611,33 +732,160 @@
         // 學生頁面功能
         async function loadStudentData() {
             try {
+                console.log('開始載入學生資料...');
+                
                 // 載入價格
+                console.log('載入價格中...');
                 await loadPricing();
                 document.getElementById('price1').textContent = pricing.price1;
                 document.getElementById('price2').textContent = pricing.price2;
+                console.log('價格載入完成:', pricing);
                 
                 // 顯示學生照片
+                console.log('顯示學生照片...');
                 document.getElementById('studentPhoto').src = currentStudent.photoUrl;
                 
-                // 檢查是否已經提交訂單
-                const orderQuery = query(
-                    collection(firebaseDB, 'orders'),
-                    where('studentEmail', '==', currentUser.email)
-                );
-                const orderSnapshot = await getDocs(orderQuery);
+                // 檢查學生最新記錄
+                console.log('檢查學生最新記錄...');
                 
-                if (!orderSnapshot.empty) {
-                    // 已有訂單
-                    document.getElementById('studentDataLoading').classList.add('hidden');
-                    document.getElementById('orderSubmitted').classList.remove('hidden');
+                let recordsSnapshot;
+                try {
+                    const recordsQuery = query(
+                        collection(firebaseDB, 'student_records'),
+                        where('studentEmail', '==', currentUser.email)
+                    );
+                    recordsSnapshot = await getDocs(recordsQuery);
+                    console.log('記錄查詢完成，找到', recordsSnapshot.size, '個記錄');
+                } catch (queryError) {
+                    console.error('查詢記錄時出錯:', queryError);
+                    // 如果查詢失敗，假設沒有記錄
+                    recordsSnapshot = { empty: true };
+                }
+                
+                if (!recordsSnapshot.empty && recordsSnapshot.docs && recordsSnapshot.docs.length > 0) {
+                    // 有記錄 - 取最新的記錄（手動排序）
+                    let latestRecord = recordsSnapshot.docs[0];
+                    for (let i = 1; i < recordsSnapshot.docs.length; i++) {
+                        const currentDoc = recordsSnapshot.docs[i];
+                        const currentTime = currentDoc.data().createdAt?.toDate?.() || new Date(0);
+                        const latestTime = latestRecord.data().createdAt?.toDate?.() || new Date(0);
+                        if (currentTime > latestTime) {
+                            latestRecord = currentDoc;
+                        }
+                    }
+                    
+                    const latestRecordData = { id: latestRecord.id, ...latestRecord.data() };
+                    console.log('找到最新記錄:', latestRecordData);
+                    
+                    // 如果最新記錄是訂單，顯示訂單界面
+                    if (latestRecordData.actionType === 'order') {
+                        currentOrder = latestRecordData;
+                        displayCurrentOrder();
+                        document.getElementById('studentDataLoading').classList.add('hidden');
+                        document.getElementById('orderSubmitted').classList.remove('hidden');
+                    } else {
+                        // 最新記錄是問題報告，顯示問題報告完成界面
+                        document.getElementById('studentDataLoading').classList.add('hidden');
+                        document.getElementById('completionMessage').innerHTML = `
+                            <i class="fas fa-exclamation-triangle text-orange-500 text-6xl mb-4"></i>
+                            <h2 class="text-2xl font-bold text-orange-800 dark:text-orange-200 mb-2">問題報告已提交</h2>
+                            <p class="text-orange-700 dark:text-orange-300 mb-4">我們已收到您的照片問題報告，管理員會盡快處理。</p>
+                            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-orange-200 dark:border-orange-700">
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">報告內容：</p>
+                                <p class="font-semibold">${latestRecordData.issueTypeText}</p>
+                                ${latestRecordData.description !== '無' ? `<p class="text-sm mt-2">${latestRecordData.description}</p>` : ''}
+                            </div>
+                            <div class="flex justify-center mt-4">
+                                <button onclick="reChoose()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                                    <i class="fas fa-edit mr-2"></i>重新選擇
+                                </button>
+                            </div>
+                        `;
+                        document.getElementById('completionMessage').classList.remove('hidden');
+                    }
                 } else {
-                    // 顯示照片和訂購界面
+                    // 沒有任何記錄，顯示照片和訂購界面
+                    console.log('沒有找到任何記錄，顯示訂購界面');
                     document.getElementById('studentDataLoading').classList.add('hidden');
                     document.getElementById('studentPhotoSection').classList.remove('hidden');
                 }
+                
+                console.log('學生資料載入完成');
+                
             } catch (error) {
-                console.error('載入學生資料失敗:', error);
-                showAlert('載入資料失敗');
+                console.error('載入學生資料失敗詳細錯誤:', error);
+                
+                // 提供更詳細的錯誤信息
+                let errorMessage = '載入資料失敗：';
+                if (error.code === 'permission-denied') {
+                    errorMessage += '權限被拒絕，請確保 Firestore 規則允許讀取';
+                } else if (error.code === 'unavailable') {
+                    errorMessage += 'Firebase 服務暫時不可用，請稍後重試';
+                } else if (error.message.includes('index')) {
+                    errorMessage += '資料庫索引問題，請聯繫管理員';
+                } else {
+                    errorMessage += error.message || '未知錯誤';
+                }
+                
+                // 隱藏載入中，顯示錯誤但仍允許用戶看到照片
+                document.getElementById('studentDataLoading').classList.add('hidden');
+                document.getElementById('studentPhotoSection').classList.remove('hidden');
+                
+                showAlert(errorMessage);
+            }
+        }
+
+        // 顯示當前訂單資訊
+        function displayCurrentOrder() {
+            if (currentOrder) {
+                document.getElementById('currentOrderQuantity').textContent = currentOrder.quantity;
+                document.getElementById('currentOrderPrice').textContent = `$${currentOrder.price}`;
+                document.getElementById('currentOrderTime').textContent = new Date(currentOrder.timestamp).toLocaleString('zh-TW');
+            }
+        }
+
+        // 重新選擇
+        function reChoose() {
+            // 隱藏訂單顯示
+            document.getElementById('orderSubmitted').classList.add('hidden');
+            
+            // 重置並顯示照片確認區域
+            document.getElementById('photoConfirmSection').classList.remove('hidden');
+            document.getElementById('photoConfirmed').classList.add('hidden');
+            document.getElementById('signatureSection').classList.add('hidden');
+            document.getElementById('studentPhotoSection').classList.remove('hidden');
+            
+            // 重置表單
+            const radios = document.querySelectorAll('input[name="orderOption"]');
+            radios.forEach(radio => radio.checked = false);
+            
+            // 清除簽名
+            if (signatureCanvas && signatureCtx) {
+                signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+            }
+        }
+
+
+
+        // 查看訂單簽名
+        function viewOrderSignature() {
+            if (currentOrder && currentOrder.signature) {
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                modal.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">您的簽名</h3>
+                        <img src="${currentOrder.signature}" alt="簽名" class="w-full border border-gray-200 dark:border-gray-600 rounded">
+                        <div class="flex justify-end mt-4">
+                            <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 rounded">
+                                關閉
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            } else {
+                showAlert('未找到簽名資料');
             }
         }
 
@@ -656,11 +904,115 @@
             if (isCorrect) {
                 document.getElementById('photoConfirmSection').classList.add('hidden');
                 document.getElementById('photoConfirmed').classList.remove('hidden');
-                document.getElementById('orderSection').classList.remove('hidden');
             } else {
-                showAlert('請聯繫管理員更正您的照片');
+                // 顯示照片問題報告界面
+                showPhotoIssueReport();
             }
         }
+
+        // 顯示照片問題報告界面
+        function showPhotoIssueReport() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>照片問題報告
+                    </h3>
+                    <p class="text-gray-700 dark:text-gray-300 mb-4">請選擇照片的問題類型，我們會盡快處理：</p>
+                    
+                    <div class="space-y-3 mb-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="issueType" value="wrong_person" class="mr-2">
+                            <span class="text-sm">這不是我的照片（照片是其他人）</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="issueType" value="other" class="mr-2">
+                            <span class="text-sm">其他問題</span>
+                        </label>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">詳細說明（選填）：</label>
+                        <textarea id="issueDescription" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm" 
+                                  rows="3" placeholder="請描述具體問題..."></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button onclick="this.closest('.fixed').remove()" 
+                                class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                            取消
+                        </button>
+                        <button onclick="submitPhotoIssue()" 
+                                class="px-4 py-2 bg-red-500 text-white hover:bg-red-600 rounded">
+                            提交問題報告
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // 提交照片問題報告
+        async function submitPhotoIssue() {
+            try {
+                const selectedIssue = document.querySelector('input[name="issueType"]:checked');
+                if (!selectedIssue) {
+                    showAlert('請選擇問題類型');
+                    return;
+                }
+
+                const description = document.getElementById('issueDescription').value.trim();
+                
+                const issueTypes = {
+                    'wrong_person': '這不是我的照片（照片是其他人）',
+                    'other': '其他問題'
+                };
+
+                const recordData = {
+                    studentEmail: currentUser.email,
+                    studentName: currentStudent.name,
+                    studentClass: currentStudent.class,
+                    studentId: currentStudent.id,
+                    actionType: 'issue', // 統一的動作類型
+                    issueType: selectedIssue.value,
+                    issueTypeText: issueTypes[selectedIssue.value],
+                    description: description || '無',
+                    status: 'pending', // pending, resolved
+                    timestamp: new Date().toISOString(),
+                    createdAt: new Date()
+                };
+
+                // 創建新記錄到統一集合
+                await addDoc(collection(firebaseDB, 'student_records'), recordData);
+
+                // 找到並關閉問題報告模態框
+                const issueModal = document.querySelector('.fixed');
+                if (issueModal && issueModal.querySelector('input[name="issueType"]')) {
+                    issueModal.remove();
+                }
+
+                // 顯示成功訊息
+                document.getElementById('studentPhotoSection').classList.add('hidden');
+                document.getElementById('completionMessage').innerHTML = `
+                    <i class="fas fa-exclamation-triangle text-orange-500 text-6xl mb-4"></i>
+                    <h2 class="text-2xl font-bold text-orange-800 dark:text-orange-200 mb-2">問題報告已提交</h2>
+                    <p class="text-orange-700 dark:text-orange-300 mb-4">我們已收到您的照片問題報告，管理員會盡快處理。</p>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-orange-200 dark:border-orange-700">
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">報告內容：</p>
+                        <p class="font-semibold">${issueTypes[selectedIssue.value]}</p>
+                        ${description ? `<p class="text-sm mt-2">${description}</p>` : ''}
+                    </div>
+                `;
+                document.getElementById('completionMessage').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('提交問題報告失敗:', error);
+                showAlert('提交失敗，請重試');
+            }
+        }
+
+
 
         function selectOrder(option) {
             const radio = document.querySelector(`input[value="${option}"]`);
@@ -736,28 +1088,68 @@
             }
             
             try {
-                document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>提交中...';
+                const isUpdate = currentOrder && currentOrder.id;
+                document.getElementById('submitBtn').innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>${isUpdate ? '更新中...' : '提交中...'}`;
                 document.getElementById('submitBtn').disabled = true;
                 
-                const order = {
+                // 根據選項確定數量和價格
+                let quantity, price;
+                switch (selectedOption.value) {
+                    case '0':
+                        quantity = '0打';
+                        price = 0;
+                        break;
+                    case '1':
+                        quantity = '1打';
+                        price = pricing.price1;
+                        break;
+                    case '2':
+                        quantity = '2打';
+                        price = pricing.price2;
+                        break;
+                    default:
+                        quantity = '0打';
+                        price = 0;
+                }
+                
+                const recordData = {
                     studentEmail: currentUser.email,
                     studentName: currentStudent.name,
                     studentClass: currentStudent.class,
                     studentId: currentStudent.id,
+                    actionType: 'order', // 統一的動作類型
                     photoConfirmed: true,
-                    quantity: selectedOption.value === '1' ? '1打' : '2打',
-                    price: selectedOption.value === '1' ? pricing.price1 : pricing.price2,
+                    quantity: quantity,
+                    price: price,
                     signature: signatureCanvas.toDataURL(),
                     timestamp: new Date().toISOString(),
                     createdAt: new Date()
                 };
                 
-                await addDoc(collection(firebaseDB, 'orders'), order);
+                // 新訂單直接創建到統一集合
+                const docRef = await addDoc(collection(firebaseDB, 'student_records'), recordData);
+                currentOrder = { id: docRef.id, ...recordData };
                 
+                // 更新 UI
+                displayCurrentOrder();
                 document.getElementById('studentPhotoSection').classList.add('hidden');
-                document.getElementById('orderSection').classList.add('hidden');
                 document.getElementById('signatureSection').classList.add('hidden');
+                
+                // 顯示成功訊息
+                document.getElementById('completionMessage').innerHTML = `
+                    <i class="fas fa-check-circle text-green-500 text-6xl mb-4"></i>
+                    <h2 class="text-2xl font-bold text-green-800 dark:text-green-200 mb-2">訂單提交成功！</h2>
+                    <p class="text-green-700 dark:text-green-300">
+                        ${quantity === '0打' ? '感謝您確認照片。' : '感謝您的訂購，我們會盡快處理您的訂單。'}
+                    </p>
+                `;
                 document.getElementById('completionMessage').classList.remove('hidden');
+                
+                // 3秒後自動切換到訂單顯示
+                setTimeout(() => {
+                    document.getElementById('completionMessage').classList.add('hidden');
+                    document.getElementById('orderSubmitted').classList.remove('hidden');
+                }, 3000);
                 
             } catch (error) {
                 console.error('提交訂單失敗:', error);
@@ -767,46 +1159,164 @@
             }
         }
 
+        // 將圖片轉換為 base64
+        function convertImageToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // 創建一個圖片元素來壓縮圖片
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // 設定最大尺寸（避免圖片過大）
+                        const maxWidth = 800;
+                        const maxHeight = 600;
+                        let { width, height } = img;
+                        
+                        // 保持長寬比縮放
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = (height * maxWidth) / width;
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = (width * maxHeight) / height;
+                                height = maxHeight;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // 繪製並壓縮圖片
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                        resolve(compressedBase64);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
         // 管理員功能
         document.getElementById('studentForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const studentClass = document.getElementById('studentClass').value;
-            const studentId = document.getElementById('studentId').value;
-            const studentName = document.getElementById('studentNameInput').value;
-            const studentEmail = document.getElementById('studentEmail').value;
+            const studentClass = document.getElementById('studentClass').value.trim();
+            const studentId = document.getElementById('studentId').value.trim();
+            const studentName = document.getElementById('studentNameInput').value.trim();
+            const studentEmail = document.getElementById('studentEmail').value.trim();
             const photoFile = document.getElementById('studentPhotoInput').files[0];
+            
+            console.log('開始處理學生資料:', { studentClass, studentId, studentName, studentEmail });
+            
+            // 驗證輸入
+            if (!studentClass || !studentId || !studentName || !studentEmail) {
+                showAlert('請填寫所有必要資料');
+                return;
+            }
             
             if (!photoFile) {
                 showAlert('請選擇學生照片');
                 return;
             }
             
+            // 檢查郵箱格式
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(studentEmail)) {
+                showAlert('請輸入有效的電子郵箱地址');
+                return;
+            }
+            
+            // 檢查檔案類型
+            if (!photoFile.type.startsWith('image/')) {
+                showAlert('請選擇圖片檔案（JPG, PNG, GIF 等）');
+                return;
+            }
+            
+            // 檢查檔案大小（限制為 5MB）
+            if (photoFile.size > 5 * 1024 * 1024) {
+                showAlert('照片檔案過大，請選擇小於 5MB 的照片');
+                return;
+            }
+            
+            console.log('驗證通過，開始處理...');
+            
             try {
-                document.getElementById('addStudentBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>上傳中...';
+                // 檢查 Firebase 連接
+                if (!window.firebaseDB) {
+                    throw new Error('Firebase 未正確初始化');
+                }
+                
+                document.getElementById('addStudentBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>處理照片中...';
                 document.getElementById('addStudentBtn').disabled = true;
                 
-                // 上傳照片到 Firebase Storage
-                const photoRef = ref(firebaseStorage, `student-photos/${studentEmail}`);
-                await uploadBytes(photoRef, photoFile);
-                const photoUrl = await getDownloadURL(photoRef);
+                console.log('開始轉換照片為 base64...');
                 
-                // 儲存學生資料到 Firestore
-                await setDoc(doc(firebaseDB, 'students', studentEmail), {
-                    class: studentClass,
-                    id: studentId,
-                    name: studentName,
-                    email: studentEmail,
-                    photoUrl: photoUrl,
-                    createdAt: new Date()
-                });
+                // 將照片轉換為 base64（添加超時）
+                const photoBase64 = await Promise.race([
+                    convertImageToBase64(photoFile),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('照片處理超時')), 30000)
+                    )
+                ]);
                 
-                showAlert('學生資料已新增成功');
+                console.log('照片轉換完成，大小:', photoBase64.length, '字符');
+                
+                document.getElementById('addStudentBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>儲存資料中...';
+                
+                // 檢查學生是否已存在
+                console.log('檢查學生是否已存在...');
+                const existingStudent = await getDoc(doc(firebaseDB, 'students', studentEmail));
+                if (existingStudent.exists()) {
+                    throw new Error('此電子郵箱已經註冊過，請檢查郵箱地址');
+                }
+                
+                console.log('開始儲存到 Firestore...');
+                
+                // 儲存學生資料到 Firestore（包含 base64 照片）
+                await Promise.race([
+                    setDoc(doc(firebaseDB, 'students', studentEmail), {
+                        class: studentClass,
+                        id: studentId,
+                        name: studentName,
+                        email: studentEmail,
+                        photoUrl: photoBase64, // 直接儲存 base64 格式的照片
+                        createdAt: new Date()
+                    }),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('資料庫儲存超時')), 15000)
+                    )
+                ]);
+                
+                console.log('資料儲存成功！');
+                showAlert('學生資料已新增成功！');
                 document.getElementById('studentForm').reset();
                 
             } catch (error) {
-                console.error('新增學生失敗:', error);
-                showAlert('新增失敗，請重試');
+                console.error('新增學生失敗詳細錯誤:', error);
+                
+                let errorMessage = '新增失敗：';
+                if (error.message.includes('超時')) {
+                    errorMessage += '操作超時，請檢查網路連接後重試';
+                } else if (error.message.includes('已經註冊')) {
+                    errorMessage += error.message;
+                } else if (error.code === 'permission-denied') {
+                    errorMessage += '權限被拒絕，請確保 Firestore 規則已正確設置';
+                } else if (error.code === 'unavailable') {
+                    errorMessage += 'Firebase 服務暫時不可用，請稍後重試';
+                } else if (error.message.includes('Firebase 未正確初始化')) {
+                    errorMessage += 'Firebase 未正確初始化，請檢查配置';
+                } else {
+                    errorMessage += error.message || '未知錯誤，請重試';
+                }
+                
+                showAlert(errorMessage);
             } finally {
                 document.getElementById('addStudentBtn').innerHTML = '<i class="fas fa-plus mr-2"></i>新增學生資料';
                 document.getElementById('addStudentBtn').disabled = false;
@@ -846,43 +1356,7 @@
             }
         }
 
-        async function loadOrdersForAdmin() {
-            try {
-                const ordersQuery = query(collection(firebaseDB, 'orders'), orderBy('createdAt', 'desc'));
-                const ordersSnapshot = await getDocs(ordersQuery);
-                
-                const tbody = document.getElementById('ordersTableBody');
-                tbody.innerHTML = '';
-                
-                ordersSnapshot.forEach((doc) => {
-                    const order = doc.data();
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">${order.studentName}</div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">${order.studentClass} - ${order.studentId}</div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">${order.studentEmail}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                                已確認
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${order.quantity}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">$${order.price}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${new Date(order.timestamp).toLocaleString('zh-TW')}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <button onclick="viewSignature('${encodeURIComponent(order.signature)}')" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                                <i class="fas fa-eye mr-1"></i>查看簽名
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            } catch (error) {
-                console.error('載入訂單失敗:', error);
-            }
-        }
+
 
         function switchTab(tabName) {
             document.querySelectorAll('.admin-tab-content').forEach(tab => {
@@ -899,8 +1373,8 @@
             event.target.classList.add('active', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400');
             event.target.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
             
-            if (tabName === 'orders') {
-                loadOrdersForAdmin();
+            if (tabName === 'students') {
+                loadStudentStatusForAdmin();
             }
         }
 
@@ -954,6 +1428,428 @@
             }
         }
 
+        // 載入照片確認記錄
+        async function loadConfirmationsForAdmin() {
+            try {
+                // 載入確認記錄
+                const confirmationsSnapshot = await getDocs(collection(firebaseDB, 'confirmations'));
+                // 載入訂單記錄
+                const ordersSnapshot = await getDocs(collection(firebaseDB, 'orders'));
+                
+                // 創建訂單映射（按學生郵箱）
+                const ordersByEmail = {};
+                ordersSnapshot.forEach(doc => {
+                    const order = doc.data();
+                    ordersByEmail[order.studentEmail] = order;
+                });
+                
+                const tbody = document.getElementById('confirmationsTableBody');
+                tbody.innerHTML = '';
+                
+                confirmationsSnapshot.forEach((doc) => {
+                    const confirmation = doc.data();
+                    const hasOrder = ordersByEmail[confirmation.studentEmail];
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">${confirmation.studentName}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${confirmation.studentClass} - ${confirmation.studentId}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${confirmation.studentEmail}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                已確認
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            ${new Date(confirmation.timestamp).toLocaleString('zh-TW')}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                                僅確認照片
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            ${hasOrder ? 
+                                '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">已訂購</span>' : 
+                                '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">未訂購</span>'
+                            }
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('載入確認記錄失敗:', error);
+            }
+        }
+
+        // 下載確認記錄
+        async function downloadConfirmations() {
+            try {
+                const confirmationsSnapshot = await getDocs(collection(firebaseDB, 'confirmations'));
+                const ordersSnapshot = await getDocs(collection(firebaseDB, 'orders'));
+                
+                // 創建訂單映射
+                const ordersByEmail = {};
+                ordersSnapshot.forEach(doc => {
+                    const order = doc.data();
+                    ordersByEmail[order.studentEmail] = order;
+                });
+                
+                const data = [];
+                confirmationsSnapshot.forEach((doc) => {
+                    const confirmation = doc.data();
+                    const hasOrder = ordersByEmail[confirmation.studentEmail];
+                    
+                    data.push({
+                        學生姓名: confirmation.studentName,
+                        班別: confirmation.studentClass,
+                        學號: confirmation.studentId,
+                        郵箱: confirmation.studentEmail,
+                        照片確認: '已確認',
+                        確認時間: new Date(confirmation.timestamp).toLocaleString('zh-TW'),
+                        動作: '僅確認照片',
+                        訂購狀態: hasOrder ? '已訂購' : '未訂購',
+                        訂購數量: hasOrder ? hasOrder.quantity : '-',
+                        訂購價格: hasOrder ? `$${hasOrder.price}` : '-'
+                    });
+                });
+                
+                const csv = convertToCSV(data);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = '學生照片確認記錄.csv';
+                link.click();
+            } catch (error) {
+                console.error('下載失敗:', error);
+                showAlert('下載失敗，請重試');
+            }
+        }
+
+        // 載入照片問題記錄
+        async function loadIssuesForAdmin() {
+            try {
+                const issuesSnapshot = await getDocs(collection(firebaseDB, 'photo_issues'));
+                
+                const tbody = document.getElementById('issuesTableBody');
+                tbody.innerHTML = '';
+                
+                if (issuesSnapshot.empty) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            暂無照片問題報告
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                    return;
+                }
+                
+                issuesSnapshot.forEach((doc) => {
+                    const issue = doc.data();
+                    const statusColor = issue.status === 'resolved' ? 'green' : 'yellow';
+                    const statusText = issue.status === 'resolved' ? '已解決' : '待處理';
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">${issue.studentName}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${issue.studentClass} - ${issue.studentId}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${issue.studentEmail}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">${issue.issueTypeText}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm text-gray-900 dark:text-gray-100">${issue.description}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            ${new Date(issue.timestamp).toLocaleString('zh-TW')}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-${statusColor}-100 text-${statusColor}-800 dark:bg-${statusColor}-800 dark:text-${statusColor}-100">
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            ${issue.status === 'pending' ? 
+                                `<button onclick="resolveIssue('${doc.id}')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 mr-3">
+                                    <i class="fas fa-check mr-1"></i>標記已解決
+                                 </button>` : ''
+                            }
+                            <button onclick="contactStudent('${issue.studentEmail}', '${issue.studentName}')" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                                <i class="fas fa-envelope mr-1"></i>聯繫學生
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('載入問題記錄失敗:', error);
+            }
+        }
+
+        // 標記問題已解決
+        async function resolveIssue(issueId) {
+            try {
+                await setDoc(doc(firebaseDB, 'photo_issues', issueId), {
+                    status: 'resolved',
+                    resolvedAt: new Date(),
+                    resolvedBy: currentUser.email
+                }, { merge: true });
+                
+                showAlert('問題已標記為已解決');
+                loadIssuesForAdmin(); // 重新載入列表
+            } catch (error) {
+                console.error('標記解決失敗:', error);
+                showAlert('操作失敗，請重試');
+            }
+        }
+
+        // 聯繫學生
+        function contactStudent(studentEmail, studentName) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">聯繫學生</h3>
+                    <p class="text-gray-700 dark:text-gray-300 mb-4">
+                        <strong>學生：</strong>${studentName}<br>
+                        <strong>郵箱：</strong>${studentEmail}
+                    </p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        您可以通過以下方式聯繫學生：
+                    </p>
+                    <div class="space-y-3">
+                        <button onclick="window.open('mailto:${studentEmail}?subject=關於您的照片問題', '_blank')" 
+                                class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-envelope mr-2"></i>發送郵件
+                        </button>
+                        <button onclick="copyToClipboard('${studentEmail}')" 
+                                class="w-full bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-copy mr-2"></i>複製郵箱地址
+                        </button>
+                    </div>
+                    <div class="flex justify-end mt-4">
+                        <button onclick="this.closest('.fixed').remove()" 
+                                class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-400 dark:hover:bg-gray-700 rounded">
+                            關閉
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // 複製到剪貼板
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showAlert('郵箱地址已複製到剪貼板');
+            } catch (error) {
+                console.error('複製失敗:', error);
+                showAlert('複製失敗，請手動複製');
+            }
+        }
+
+        // 載入學生狀態統一表格
+        async function loadStudentStatusForAdmin() {
+            try {
+                // 載入學生資料和統一的學生記錄
+                const [studentsSnapshot, recordsSnapshot] = await Promise.all([
+                    getDocs(collection(firebaseDB, 'students')),
+                    getDocs(collection(firebaseDB, 'student_records'))
+                ]);
+
+                // 創建每個學生的最新記錄映射
+                const latestRecordsByEmail = {};
+
+                recordsSnapshot.forEach(doc => {
+                    const record = doc.data();
+                    const email = record.studentEmail;
+                    const recordTime = record.createdAt?.toDate?.() || new Date(record.timestamp || 0);
+                    
+                    if (!latestRecordsByEmail[email] || 
+                        recordTime > (latestRecordsByEmail[email].createdAt?.toDate?.() || new Date(0))) {
+                        latestRecordsByEmail[email] = { id: doc.id, ...record };
+                    }
+                });
+
+                const tbody = document.getElementById('studentsTableBody');
+                tbody.innerHTML = '';
+
+                if (studentsSnapshot.empty) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            暫無學生資料
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                    return;
+                }
+
+                studentsSnapshot.forEach((doc) => {
+                    const student = doc.data();
+                    const latestRecord = latestRecordsByEmail[student.email];
+
+                    // 判斷照片狀態
+                    let photoStatus = '';
+                    let orderQuantity = '-';
+                    let orderPrice = '-';
+                    let signatureCell = '-';
+                    
+                    if (!latestRecord) {
+                        // 沒有任何記錄
+                        photoStatus = `<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">
+                            未確認
+                        </span>`;
+                    } else if (latestRecord.actionType === 'order') {
+                        // 最新記錄是訂單
+                        orderQuantity = latestRecord.quantity;
+                        orderPrice = latestRecord.price === 0 ? '免費' : `$${latestRecord.price}`;
+                        
+                        if (latestRecord.quantity === '0打') {
+                            photoStatus = `<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                                已確認 (未訂購)
+                            </span>`;
+                        } else {
+                            photoStatus = `<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                已確認並訂購
+                            </span>`;
+                        }
+                        
+                        if (latestRecord.signature) {
+                            signatureCell = `<button onclick="viewSignature('${encodeURIComponent(latestRecord.signature)}')" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                                <i class="fas fa-eye mr-1"></i>查看簽名
+                            </button>`;
+                        }
+                    } else if (latestRecord.actionType === 'issue') {
+                        // 最新記錄是問題報告
+                        if (latestRecord.status === 'pending') {
+                            photoStatus = `<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
+                                有問題 (${latestRecord.issueTypeText})
+                            </span>`;
+                        } else {
+                            photoStatus = `<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100">
+                                問題已解決
+                            </span>`;
+                        }
+                    }
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${student.class}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${student.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">${student.name}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${student.email}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">${photoStatus}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${orderQuantity}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${orderPrice}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">${signatureCell}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('載入學生狀態失敗:', error);
+                showAlert('載入學生狀態失敗，請重試');
+            }
+        }
+
+        // 下載學生狀態統一報告
+        async function downloadStudentStatus() {
+            try {
+                // 載入學生資料和統一的學生記錄
+                const [studentsSnapshot, recordsSnapshot] = await Promise.all([
+                    getDocs(collection(firebaseDB, 'students')),
+                    getDocs(collection(firebaseDB, 'student_records'))
+                ]);
+
+                // 創建每個學生的最新記錄映射
+                const latestRecordsByEmail = {};
+
+                recordsSnapshot.forEach(doc => {
+                    const record = doc.data();
+                    const email = record.studentEmail;
+                    const recordTime = record.createdAt?.toDate?.() || new Date(record.timestamp || 0);
+                    
+                    if (!latestRecordsByEmail[email] || 
+                        recordTime > (latestRecordsByEmail[email].createdAt?.toDate?.() || new Date(0))) {
+                        latestRecordsByEmail[email] = { id: doc.id, ...record };
+                    }
+                });
+
+                const data = [];
+                studentsSnapshot.forEach((doc) => {
+                    const student = doc.data();
+                    const latestRecord = latestRecordsByEmail[student.email];
+
+                    // 判斷照片狀態
+                    let photoStatus = '';
+                    let orderQuantity = '-';
+                    let orderPrice = '-';
+                    let hasSignature = '否';
+                    let problemDescription = '-';
+                    let actionTime = '-';
+                    
+                    if (!latestRecord) {
+                        // 沒有任何記錄
+                        photoStatus = '未確認';
+                    } else if (latestRecord.actionType === 'order') {
+                        // 最新記錄是訂單
+                        orderQuantity = latestRecord.quantity;
+                        orderPrice = latestRecord.price === 0 ? '免費' : `$${latestRecord.price}`;
+                        hasSignature = latestRecord.signature ? '是' : '否';
+                        actionTime = new Date(latestRecord.timestamp).toLocaleString('zh-TW');
+                        
+                        if (latestRecord.quantity === '0打') {
+                            photoStatus = '已確認 (未訂購)';
+                        } else {
+                            photoStatus = '已確認並訂購';
+                        }
+                    } else if (latestRecord.actionType === 'issue') {
+                        // 最新記錄是問題報告
+                        problemDescription = latestRecord.description || '-';
+                        actionTime = new Date(latestRecord.timestamp).toLocaleString('zh-TW');
+                        
+                        if (latestRecord.status === 'pending') {
+                            photoStatus = `有問題 (${latestRecord.issueTypeText})`;
+                        } else {
+                            photoStatus = '問題已解決';
+                        }
+                    }
+
+                    data.push({
+                        班別: student.class,
+                        學號: student.id,
+                        姓名: student.name,
+                        郵箱: student.email,
+                        照片正確否: photoStatus,
+                        訂購數量: orderQuantity,
+                        訂購價錢: orderPrice,
+                        有簽名: hasSignature,
+                        問題描述: problemDescription,
+                        最後操作時間: actionTime
+                    });
+                });
+
+                const csv = convertToCSV(data);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = '學生狀態總覽.csv';
+                link.click();
+            } catch (error) {
+                console.error('下載失敗:', error);
+                showAlert('下載失敗，請重試');
+            }
+        }
+
         function convertToCSV(data) {
             if (data.length === 0) return '';
             
@@ -999,6 +1895,333 @@
 
         function closeSetupGuide() {
             document.getElementById('setupGuide').classList.add('hidden');
+        }
+
+        // 批次上傳功能
+        let csvStudentData = [];
+
+        // 下載 CSV 範本
+        function downloadCSVTemplate() {
+            const templateData = [
+                {
+                    班別: '6A',
+                    學號: '123456',
+                    姓名: '張小明',
+                    郵箱: 'student1@school.edu.hk',
+                    照片網址: 'https://example.com/photo1.jpg'
+                },
+                {
+                    班別: '6B',
+                    學號: '123457', 
+                    姓名: '李小華',
+                    郵箱: 'student2@school.edu.hk',
+                    照片網址: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ...'
+                }
+            ];
+            
+            const csv = convertToCSV(templateData);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = '學生資料範本.csv';
+            link.click();
+        }
+
+        // 監聽檔案選擇
+        document.getElementById('csvFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                parseCSVFile(file);
+            }
+        });
+
+        // 解析 CSV 檔案
+        function parseCSVFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csv = e.target.result;
+                    csvStudentData = parseCSV(csv);
+                    displayCSVPreview();
+                } catch (error) {
+                    console.error('解析 CSV 失敗:', error);
+                    showAlert('CSV 檔案格式錯誤，請檢查檔案格式');
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        // 簡單的 CSV 解析器
+        function parseCSV(csv) {
+            const lines = csv.split('\n').filter(line => line.trim());
+            if (lines.length < 2) {
+                throw new Error('CSV 檔案至少需要包含標題行和一筆資料');
+            }
+
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            const expectedHeaders = ['班別', '學號', '姓名', '郵箱', '照片網址'];
+            
+            // 檢查標題是否正確
+            if (!expectedHeaders.every(header => headers.includes(header))) {
+                throw new Error(`CSV 標題不正確，應包含：${expectedHeaders.join(', ')}`);
+            }
+
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length >= headers.length) {
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index] || '';
+                    });
+                    
+                    // 驗證必要欄位
+                    if (row['班別'] && row['學號'] && row['姓名'] && row['郵箱']) {
+                        data.push(row);
+                    }
+                }
+            }
+
+            return data;
+        }
+
+        // 解析 CSV 行（處理引號和逗號）
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            
+            return result.map(v => v.replace(/^"|"$/g, ''));
+        }
+
+        // 顯示 CSV 預覽
+        function displayCSVPreview() {
+            const previewSection = document.getElementById('csvPreviewSection');
+            const rowCount = document.getElementById('csvRowCount');
+            const previewBody = document.getElementById('csvPreviewBody');
+            const uploadBtn = document.getElementById('batchUploadBtn');
+
+            rowCount.textContent = csvStudentData.length;
+            previewBody.innerHTML = '';
+
+            // 顯示前 10 筆預覽
+            const previewData = csvStudentData.slice(0, 10);
+            previewData.forEach(student => {
+                const row = document.createElement('tr');
+                const photoPreview = student['照片網址'] ? 
+                    (student['照片網址'].startsWith('data:') ? 'Base64 圖片' : 
+                     student['照片網址'].startsWith('http') ? '網絡圖片' : '無效格式') : '無照片';
+                
+                row.innerHTML = `
+                    <td class="px-4 py-2 text-sm">${student['班別']}</td>
+                    <td class="px-4 py-2 text-sm">${student['學號']}</td>
+                    <td class="px-4 py-2 text-sm">${student['姓名']}</td>
+                    <td class="px-4 py-2 text-sm">${student['郵箱']}</td>
+                    <td class="px-4 py-2 text-sm">${photoPreview}</td>
+                `;
+                previewBody.appendChild(row);
+            });
+
+            previewSection.classList.remove('hidden');
+            uploadBtn.disabled = false;
+        }
+
+        // 清除批次上傳
+        function clearBatchUpload() {
+            document.getElementById('csvFileInput').value = '';
+            document.getElementById('csvPreviewSection').classList.add('hidden');
+            document.getElementById('batchUploadProgress').classList.add('hidden');
+            document.getElementById('batchUploadBtn').disabled = true;
+            csvStudentData = [];
+        }
+
+        // 處理批次上傳
+        async function processBatchUpload() {
+            if (csvStudentData.length === 0) {
+                showAlert('請先選擇並預覽 CSV 檔案');
+                return;
+            }
+
+            // 顯示進度界面
+            const progressSection = document.getElementById('batchUploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const uploadResults = document.getElementById('uploadResults');
+            const uploadBtn = document.getElementById('batchUploadBtn');
+
+            progressSection.classList.remove('hidden');
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>批次上傳中...';
+            uploadResults.innerHTML = '';
+
+            let successCount = 0;
+            let errorCount = 0;
+            const errors = [];
+
+            for (let i = 0; i < csvStudentData.length; i++) {
+                const student = csvStudentData[i];
+                
+                // 更新進度
+                const progress = ((i + 1) / csvStudentData.length) * 100;
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${i + 1} / ${csvStudentData.length}`;
+
+                try {
+                    // 檢查郵箱格式
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(student['郵箱'])) {
+                        throw new Error('郵箱格式不正確');
+                    }
+
+                    // 檢查學生是否已存在
+                    const existingStudent = await getDoc(doc(firebaseDB, 'students', student['郵箱']));
+                    if (existingStudent.exists()) {
+                        errors.push(`${student['姓名']} (${student['郵箱']}): 郵箱已存在`);
+                        errorCount++;
+                        continue;
+                    }
+
+                    // 處理照片
+                    let photoUrl = '';
+                    if (student['照片網址']) {
+                        if (student['照片網址'].startsWith('data:image/')) {
+                            // Base64 圖片，直接使用
+                            photoUrl = student['照片網址'];
+                        } else if (student['照片網址'].startsWith('http')) {
+                            // 網絡圖片，嘗試下載並轉換
+                            try {
+                                photoUrl = await downloadAndConvertImage(student['照片網址']);
+                            } catch (imgError) {
+                                console.error('圖片下載失敗:', imgError);
+                                photoUrl = student['照片網址']; // 使用原始 URL
+                            }
+                        } else {
+                            throw new Error('照片網址格式不支援');
+                        }
+                    }
+
+                    // 儲存學生資料
+                    await setDoc(doc(firebaseDB, 'students', student['郵箱']), {
+                        class: student['班別'],
+                        id: student['學號'],
+                        name: student['姓名'],
+                        email: student['郵箱'],
+                        photoUrl: photoUrl,
+                        createdAt: new Date(),
+                        batchUpload: true
+                    });
+
+                    successCount++;
+                    
+                    // 顯示成功結果
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'p-2 bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded text-sm text-green-800 dark:text-green-200';
+                    resultDiv.innerHTML = `<i class="fas fa-check mr-2"></i>成功：${student['姓名']} (${student['郵箱']})`;
+                    uploadResults.appendChild(resultDiv);
+
+                } catch (error) {
+                    console.error('上傳學生失敗:', error);
+                    errors.push(`${student['姓名']} (${student['郵箱']}): ${error.message}`);
+                    errorCount++;
+                    
+                    // 顯示錯誤結果
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'p-2 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded text-sm text-red-800 dark:text-red-200';
+                    resultDiv.innerHTML = `<i class="fas fa-times mr-2"></i>失敗：${student['姓名']} (${student['郵箱']}) - ${error.message}`;
+                    uploadResults.appendChild(resultDiv);
+                }
+
+                // 短暫延遲避免過快請求
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            // 顯示總結
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'p-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded mt-4';
+            summaryDiv.innerHTML = `
+                <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">批次上傳完成</h4>
+                <p class="text-sm text-blue-700 dark:text-blue-300">
+                    成功：${successCount} 筆<br>
+                    失敗：${errorCount} 筆<br>
+                    總計：${csvStudentData.length} 筆
+                </p>
+            `;
+            uploadResults.appendChild(summaryDiv);
+
+            // 重置按鈕
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i>開始批次上傳';
+
+            if (successCount > 0) {
+                showAlert(`批次上傳完成！成功上傳 ${successCount} 筆學生資料。`);
+            }
+        }
+
+        // 下載並轉換網絡圖片為 Base64
+        async function downloadAndConvertImage(imageUrl) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                img.onload = function() {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // 設定最大尺寸
+                        const maxWidth = 800;
+                        const maxHeight = 600;
+                        let { width, height } = img;
+                        
+                        // 保持長寬比縮放
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = (height * maxWidth) / width;
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = (width * maxHeight) / height;
+                                height = maxHeight;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // 繪製並壓縮圖片
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                        resolve(base64);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                img.onerror = function() {
+                    reject(new Error('無法載入圖片'));
+                };
+                
+                // 設置超時
+                setTimeout(() => {
+                    reject(new Error('圖片載入超時'));
+                }, 10000);
+                
+                img.src = imageUrl;
+            });
         }
     </script>
 </body>
