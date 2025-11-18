@@ -2057,7 +2057,10 @@
 
         // ==================== GROUP MANAGEMENT FUNCTIONS ====================
         function autoAssignGroups() {
+            console.log("🔍 autoAssignGroups function called!");
+
             if (!database) {
+                console.error("❌ Database not initialized!");
                 showAlert('Firebase is not configured.', '⚠️');
                 return;
             }
@@ -2065,8 +2068,12 @@
             console.log("👥 Auto-assigning groups...");
             const studentsRef = database.ref('students');
             studentsRef.once('value', (snapshot) => {
+                console.log("📊 Firebase query completed");
                 const students = snapshot.val();
+                console.log("👥 Students data:", students);
+
                 if (!students || Object.keys(students).length === 0) {
+                    console.warn("⚠️ No students found!");
                     showAlert('No students logged in yet! Students need to log in before creating groups.', '📚');
                     return;
                 }
@@ -2075,6 +2082,7 @@
                     id: id,
                     name: students[id].name
                 }));
+                console.log("📋 Student list:", studentList);
 
                 // Shuffle students randomly
                 for (let i = studentList.length - 1; i > 0; i--) {
@@ -2113,15 +2121,22 @@
 
                 // Save groups to Firebase
                 const groupsRef = database.ref('groups');
+
+                console.log("🔄 Clearing existing groups...");
                 groupsRef.set(null).then(() => {
-                    const updates = {};
+                    console.log("✅ Existing groups cleared");
+
+                    // Prepare groups with initialized individual progress
+                    const groupsToSave = {};
                     groups.forEach(group => {
-                        updates[group.id] = group;
-                        // Initialize individual progress for each member
+                        // Initialize individual progress within the group object
                         group.members.forEach(memberId => {
-                            updates[group.id + '/individualProgress/' + memberId] = 0;
+                            group.individualProgress[memberId] = 0;
                         });
+                        groupsToSave[group.id] = group;
                     });
+
+                    console.log("📦 Groups to save:", groupsToSave);
 
                     // Update students with their group ID
                     const studentUpdates = {};
@@ -2131,12 +2146,25 @@
                         });
                     });
 
-                    groupsRef.update(updates).then(() => {
+                    console.log("👥 Student updates:", studentUpdates);
+
+                    // Save groups and update students
+                    groupsRef.set(groupsToSave).then(() => {
+                        console.log("✅ Groups saved to Firebase");
                         database.ref().update(studentUpdates).then(() => {
-                            console.log("✅ Groups assigned successfully!");
+                            console.log("✅ Students updated with group IDs");
                             showAlert(`Successfully created ${groups.length} groups!`, '✅');
+                        }).catch(error => {
+                            console.error("❌ Error updating students:", error);
+                            showAlert('Error assigning groups to students: ' + error.message, '❌');
                         });
+                    }).catch(error => {
+                        console.error("❌ Error saving groups:", error);
+                        showAlert('Error saving groups: ' + error.message, '❌');
                     });
+                }).catch(error => {
+                    console.error("❌ Error clearing groups:", error);
+                    showAlert('Error clearing existing groups: ' + error.message, '❌');
                 });
             });
         }
