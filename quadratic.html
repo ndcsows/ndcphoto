@@ -1010,6 +1010,103 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
         }
+
+        /* Confirm Modal */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .confirm-modal.show {
+            display: flex;
+        }
+
+        .confirm-content {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: bounceIn 0.4s ease;
+        }
+
+        .confirm-icon {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .confirm-message {
+            text-align: center;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .confirm-btn {
+            flex: 1;
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .confirm-btn-cancel {
+            background: var(--bg-dark);
+            border: 2px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .confirm-btn-cancel:hover {
+            background: var(--bg-hover);
+        }
+
+        .confirm-btn-confirm {
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-yellow));
+            color: white;
+        }
+
+        .confirm-btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .clear-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-card);
+            border: 2px solid var(--accent-red);
+            border-radius: 8px;
+            color: var(--accent-red);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            margin-left: 1rem;
+        }
+
+        .clear-btn:hover {
+            background: var(--accent-red);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -1059,7 +1156,10 @@
     <div id="teacherDashboard" class="container hidden">
         <div class="dashboard-header">
             <h1 class="dashboard-title">👩‍🏫 Teacher Dashboard</h1>
-            <button class="logout-btn" onclick="logout()">Logout</button>
+            <div>
+                <button class="clear-btn" onclick="confirmClearAllStudents()">🗑️ Clear All Students</button>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
         </div>
 
         <div class="stats">
@@ -1260,6 +1360,18 @@
         </div>
     </div>
 
+    <!-- Confirm Modal -->
+    <div class="confirm-modal" id="confirmModal">
+        <div class="confirm-content">
+            <div class="confirm-icon" id="confirmIcon">⚠️</div>
+            <div class="confirm-message" id="confirmMessage"></div>
+            <div class="confirm-buttons">
+                <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirm()">Cancel</button>
+                <button class="confirm-btn confirm-btn-confirm" id="confirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ==================== FIREBASE CONFIGURATION ====================
         const firebaseConfig = {
@@ -1289,6 +1401,8 @@
         let currentUser = null;
         let currentRole = null;
         let studentId = null;
+        let studentDataListener = null;
+        let studentDataInitialized = false;
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -1401,6 +1515,32 @@
             modal.classList.remove('show');
         }
 
+        // ==================== CONFIRM MODAL FUNCTIONS ====================
+        function showConfirm(message, onConfirm, icon = '⚠️') {
+            const modal = document.getElementById('confirmModal');
+            const messageEl = document.getElementById('confirmMessage');
+            const iconEl = document.getElementById('confirmIcon');
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            messageEl.textContent = message;
+            iconEl.textContent = icon;
+            modal.classList.add('show');
+
+            // Remove old event listeners and add new one
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+            newConfirmBtn.onclick = () => {
+                closeConfirm();
+                onConfirm();
+            };
+        }
+
+        function closeConfirm() {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('show');
+        }
+
         // ==================== LOGIN FUNCTIONS ====================
         function switchTab(role) {
             document.querySelectorAll('.login-tab').forEach(tab => tab.classList.remove('active'));
@@ -1431,6 +1571,7 @@
             currentUser = name;
             currentRole = 'student';
             studentId = name.toLowerCase().replace(/\s+/g, '_');
+            studentDataInitialized = false;
 
             console.log("📝 Student logging in:", name, "ID:", studentId);
 
@@ -1446,6 +1587,7 @@
                 isActive: true
             }).then(() => {
                 console.log("✅ Student data written to Firebase successfully!");
+                studentDataInitialized = true;
             }).catch((error) => {
                 console.error("❌ Error writing student data:", error);
                 showAlert("Error saving student data: " + error.message);
@@ -1492,16 +1634,28 @@
 
         function logout() {
             if (currentRole === 'student' && studentId) {
-                // Mark student as inactive
-                database.ref('students/' + studentId).update({
-                    isActive: false
-                });
+                // Remove Firebase listener
+                if (studentDataListener && database) {
+                    const studentRef = database.ref('students/' + studentId);
+                    studentRef.off('value', studentDataListener);
+                    studentDataListener = null;
+                }
+
+                // Mark student as inactive (only if data still exists)
+                if (database) {
+                    database.ref('students/' + studentId).update({
+                        isActive: false
+                    }).catch(() => {
+                        // Silently catch error if student data was already deleted
+                    });
+                }
             }
 
             // Reset state
             currentUser = null;
             currentRole = null;
             studentId = null;
+            studentDataInitialized = false;
 
             // Show login screen
             document.getElementById('loginScreen').classList.remove('hidden');
@@ -1552,6 +1706,18 @@
                     updateStats();
                 }
             });
+
+            // Listen for deletion - if student data is removed, log them out
+            studentDataListener = studentRef.on('value', (snapshot) => {
+                // Only check for deletion if student was already initialized
+                if (!snapshot.exists() && currentRole === 'student' && studentDataInitialized) {
+                    console.log("⚠️ Student data was removed - logging out...");
+                    showAlert('You have been logged out by the teacher. Please log in again to continue.', '🚪');
+                    setTimeout(() => {
+                        logout();
+                    }, 2000);
+                }
+            });
         }
 
         function listenForStudents() {
@@ -1564,6 +1730,34 @@
                 console.log("📊 Students data received:", students);
                 updateDashboard(students);
             });
+        }
+
+        // ==================== CLEAR STUDENTS FUNCTION ====================
+        function confirmClearAllStudents() {
+            showConfirm(
+                'Are you sure you want to remove all students from the database? This action cannot be undone!',
+                clearAllStudents,
+                '🗑️'
+            );
+        }
+
+        function clearAllStudents() {
+            if (!database) {
+                showAlert('Firebase is not configured.', '⚠️');
+                return;
+            }
+
+            console.log("🗑️ Clearing all students...");
+            const studentsRef = database.ref('students');
+            studentsRef.remove()
+                .then(() => {
+                    console.log("✅ All students cleared successfully!");
+                    showAlert('All students have been removed from the database.', '✅');
+                })
+                .catch((error) => {
+                    console.error("❌ Error clearing students:", error);
+                    showAlert('Error clearing students: ' + error.message, '❌');
+                });
         }
 
         // ==================== TEACHER DASHBOARD ====================
