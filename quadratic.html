@@ -7,6 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -62,6 +67,317 @@
             margin: 0 auto;
         }
 
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .login-title {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .login-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .login-tab {
+            flex: 1;
+            padding: 1rem;
+            background: var(--bg-dark);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .login-tab.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        .login-form {
+            display: none;
+        }
+
+        .login-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            background: var(--bg-dark);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.125rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid var(--accent-blue);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .info-box strong {
+            color: var(--accent-blue);
+        }
+
+        /* Teacher Dashboard */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logout-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .logout-btn:hover {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            color: white;
+        }
+
+        .students-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .student-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .student-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+        }
+
+        .student-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .student-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .student-stage {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            color: white;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .student-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .student-stat {
+            text-align: center;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            border-radius: 8px;
+        }
+
+        .student-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Fira Code', monospace;
+            color: var(--accent-blue);
+            display: block;
+        }
+
+        .student-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .student-progress {
+            margin-top: 1rem;
+        }
+
+        .student-progress-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .student-progress-bar {
+            height: 8px;
+            background: var(--bg-dark);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .student-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        .status-active {
+            background: var(--accent-green);
+        }
+
+        .status-inactive {
+            background: var(--text-secondary);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
         header {
             text-align: center;
             margin-bottom: 2rem;
@@ -76,6 +392,17 @@
             to {
                 opacity: 1;
                 transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
             }
         }
 
@@ -104,17 +431,6 @@
             color: white;
             box-shadow: 0 10px 40px rgba(139, 92, 246, 0.3);
             animation: fadeIn 0.6s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
         }
 
         .stage-header {
@@ -210,11 +526,6 @@
             background: rgba(255, 255, 255, 0.25);
             border-color: white;
             animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
         }
 
         .mini-badge-icon {
@@ -320,24 +631,6 @@
 
         .coefficient-question.hidden {
             display: none;
-        }
-
-        .coefficient-question.locked {
-            opacity: 0.5;
-            pointer-events: none;
-            position: relative;
-        }
-
-        .coefficient-question.locked::after {
-            content: '🔒 Unlock in next stage';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--bg-card);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-weight: 600;
         }
 
         .coeff-label {
@@ -526,6 +819,31 @@
             position: relative;
         }
 
+        .celebration-content.demotion {
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-yellow));
+            animation: shakeIn 0.6s ease;
+        }
+
+        @keyframes shakeIn {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 0;
+            }
+            25% {
+                transform: scale(1.1) rotate(-5deg);
+            }
+            50% {
+                transform: scale(0.9) rotate(5deg);
+            }
+            75% {
+                transform: scale(1.05) rotate(-2deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
         @keyframes bounceIn {
             0% {
                 transform: scale(0);
@@ -600,6 +918,10 @@
             }
         }
 
+        .hidden {
+            display: none !important;
+        }
+
         @media (max-width: 768px) {
             .stats {
                 grid-template-columns: repeat(2, 1fr);
@@ -621,14 +943,158 @@
             .celebration-title {
                 font-size: 2rem;
             }
+
+            .students-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Alert Modal */
+        .alert-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .alert-modal.show {
+            display: flex;
+        }
+
+        .alert-content {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: bounceIn 0.4s ease;
+        }
+
+        .alert-icon {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .alert-message {
+            text-align: center;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .alert-btn {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .alert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <h1 class="login-title">🎯 Parabola Trainer</h1>
+            <p class="login-subtitle">Choose your role to begin</p>
+
+            <div class="login-tabs">
+                <div class="login-tab active" onclick="switchTab('student')">
+                    👨‍🎓 Student
+                </div>
+                <div class="login-tab" onclick="switchTab('teacher')">
+                    👩‍🏫 Teacher
+                </div>
+            </div>
+
+            <!-- Student Login -->
+            <div id="studentLogin" class="login-form active">
+                <div class="form-group">
+                    <label class="form-label">Your Name</label>
+                    <input type="text" id="studentName" class="form-input" placeholder="Enter your full name" maxlength="30">
+                </div>
+                <button class="login-btn" onclick="studentLogin()">Start Learning</button>
+                <div class="info-box">
+                    <strong>👋 Students:</strong> Enter your name to start the parabola learning journey. Your teacher will be able to see your progress in real-time!
+                </div>
+            </div>
+
+            <!-- Teacher Login -->
+            <div id="teacherLogin" class="login-form">
+                <div class="form-group">
+                    <label class="form-label">Teacher Password</label>
+                    <input type="password" id="teacherPassword" class="form-input" placeholder="Enter teacher password">
+                </div>
+                <button class="login-btn" onclick="teacherLogin()">View Dashboard</button>
+                <div class="info-box">
+                    <strong>👩‍🏫 Teachers:</strong> Use the password: <strong>teacher123</strong><br>
+                    (You can change this in Firebase settings)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Dashboard -->
+    <div id="teacherDashboard" class="container hidden">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">👩‍🏫 Teacher Dashboard</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <span class="stat-value" id="dashTotalStudents">0</span>
+                <span class="stat-label">Active Students</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="dashAvgStage">0</span>
+                <span class="stat-label">Avg Stage</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="dashAvgAccuracy">0%</span>
+                <span class="stat-label">Avg Accuracy</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="dashTotalQuestions">0</span>
+                <span class="stat-label">Total Questions</span>
+            </div>
+        </div>
+
+        <div id="studentsContainer" class="students-grid"></div>
+
+        <div id="emptyState" class="empty-state">
+            <div class="empty-state-icon">📚</div>
+            <h2>No Students Yet</h2>
+            <p>Students will appear here once they log in and start learning</p>
+        </div>
+    </div>
+
+    <!-- Student Learning Interface -->
+    <div id="studentInterface" class="container hidden">
         <header>
             <h1>🎯 Parabola Sign Trainer</h1>
-            <p class="subtitle">Progressive Learning Journey</p>
+            <p class="subtitle">Progressive Learning Journey - <span id="studentNameDisplay"></span> <button class="logout-btn" onclick="logout()" style="margin-left: 1rem; padding: 0.5rem 1rem; font-size: 0.875rem;">Logout</button></p>
         </header>
 
         <!-- Stage Progress -->
@@ -781,11 +1247,49 @@
             <div class="celebration-message" id="celebrationMessage">
                 Congratulations! You've mastered this stage.
             </div>
-            <button class="celebration-btn" onclick="advanceStage()">Continue to Next Stage</button>
+            <button class="celebration-btn" id="celebrationBtn" onclick="advanceStage()">Continue to Next Stage</button>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div class="alert-modal" id="alertModal">
+        <div class="alert-content">
+            <div class="alert-icon" id="alertIcon">⚠️</div>
+            <div class="alert-message" id="alertMessage"></div>
+            <button class="alert-btn" id="alertBtn" onclick="closeAlert()">OK</button>
         </div>
     </div>
 
     <script>
+        // ==================== FIREBASE CONFIGURATION ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCnLjEl9g8WqzZdnkR4SOLj6RJRJfZUZ4E",
+            authDomain: "ndc-quadratic.firebaseapp.com",
+            databaseURL: "https://ndc-quadratic-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ndc-quadratic",
+            storageBucket: "ndc-quadratic.firebasestorage.app",
+            messagingSenderId: "503928329288",
+            appId: "1:503928329288:web:1b8240ed801e66a168747d",
+            measurementId: "G-3PWSBP0RB4"
+        };
+
+        // Initialize Firebase
+        let database;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            console.log("✅ Firebase initialized successfully!");
+            console.log("Database URL:", firebaseConfig.databaseURL);
+        } catch (error) {
+            console.error("❌ Firebase initialization error:", error);
+            showAlert("Firebase is not configured. Please add your Firebase configuration in the script section.");
+        }
+
+        // ==================== GLOBAL VARIABLES ====================
+        let currentUser = null;
+        let currentRole = null;
+        let studentId = null;
+
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
@@ -881,6 +1385,270 @@
             }
         };
 
+        // ==================== ALERT MODAL FUNCTIONS ====================
+        function showAlert(message, icon = '⚠️') {
+            const modal = document.getElementById('alertModal');
+            const messageEl = document.getElementById('alertMessage');
+            const iconEl = document.getElementById('alertIcon');
+
+            messageEl.textContent = message;
+            iconEl.textContent = icon;
+            modal.classList.add('show');
+        }
+
+        function closeAlert() {
+            const modal = document.getElementById('alertModal');
+            modal.classList.remove('show');
+        }
+
+        // ==================== LOGIN FUNCTIONS ====================
+        function switchTab(role) {
+            document.querySelectorAll('.login-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.login-form').forEach(form => form.classList.remove('active'));
+
+            if (role === 'student') {
+                document.querySelectorAll('.login-tab')[0].classList.add('active');
+                document.getElementById('studentLogin').classList.add('active');
+            } else {
+                document.querySelectorAll('.login-tab')[1].classList.add('active');
+                document.getElementById('teacherLogin').classList.add('active');
+            }
+        }
+
+        function studentLogin() {
+            const name = document.getElementById('studentName').value.trim();
+
+            if (!name) {
+                showAlert('Please enter your name', '📝');
+                return;
+            }
+
+            if (!database) {
+                showAlert('Firebase is not configured. Please check the console.');
+                return;
+            }
+
+            currentUser = name;
+            currentRole = 'student';
+            studentId = name.toLowerCase().replace(/\s+/g, '_');
+
+            console.log("📝 Student logging in:", name, "ID:", studentId);
+
+            // Initialize student in Firebase
+            const studentRef = database.ref('students/' + studentId);
+            studentRef.update({
+                name: name,
+                currentStage: 1,
+                stageProgress: 0,
+                totalQuestions: 0,
+                correctAnswers: 0,
+                lastActive: firebase.database.ServerValue.TIMESTAMP,
+                isActive: true
+            }).then(() => {
+                console.log("✅ Student data written to Firebase successfully!");
+            }).catch((error) => {
+                console.error("❌ Error writing student data:", error);
+                showAlert("Error saving student data: " + error.message);
+            });
+
+            // Load student data
+            loadStudentData();
+
+            // Hide login, show student interface
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('studentInterface').classList.remove('hidden');
+            document.getElementById('studentNameDisplay').textContent = name;
+
+            // Start heartbeat
+            startHeartbeat();
+
+            // Initialize game
+            updateStageUI();
+            generateNewQuestion();
+        }
+
+        function teacherLogin() {
+            const password = document.getElementById('teacherPassword').value;
+
+            if (password !== 'teacher123') {
+                showAlert('Incorrect password!', '🔒');
+                return;
+            }
+
+            if (!database) {
+                showAlert('Firebase is not configured. Please check the console.');
+                return;
+            }
+
+            currentRole = 'teacher';
+
+            // Hide login, show dashboard
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('teacherDashboard').classList.remove('hidden');
+
+            // Start listening for student updates
+            listenForStudents();
+        }
+
+        function logout() {
+            if (currentRole === 'student' && studentId) {
+                // Mark student as inactive
+                database.ref('students/' + studentId).update({
+                    isActive: false
+                });
+            }
+
+            // Reset state
+            currentUser = null;
+            currentRole = null;
+            studentId = null;
+
+            // Show login screen
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('studentInterface').classList.add('hidden');
+            document.getElementById('teacherDashboard').classList.add('hidden');
+        }
+
+        // ==================== FIREBASE SYNC FUNCTIONS ====================
+        function startHeartbeat() {
+            // Update last active timestamp every 30 seconds
+            setInterval(() => {
+                if (studentId && database) {
+                    database.ref('students/' + studentId).update({
+                        lastActive: firebase.database.ServerValue.TIMESTAMP,
+                        isActive: true
+                    });
+                }
+            }, 30000);
+        }
+
+        function saveStudentProgress() {
+            if (!studentId || !database) return;
+
+            const studentRef = database.ref('students/' + studentId);
+            studentRef.update({
+                currentStage: progression.currentStage,
+                stageProgress: progression.stageProgress,
+                totalQuestions: stats.total,
+                correctAnswers: stats.correct,
+                lastActive: firebase.database.ServerValue.TIMESTAMP,
+                isActive: true
+            });
+        }
+
+        function loadStudentData() {
+            if (!studentId || !database) return;
+
+            const studentRef = database.ref('students/' + studentId);
+            studentRef.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    progression.currentStage = data.currentStage || 1;
+                    progression.stageProgress = data.stageProgress || 0;
+                    stats.total = data.totalQuestions || 0;
+                    stats.correct = data.correctAnswers || 0;
+
+                    updateStageUI();
+                    updateStats();
+                }
+            });
+        }
+
+        function listenForStudents() {
+            if (!database) return;
+
+            console.log("👀 Teacher dashboard listening for students...");
+            const studentsRef = database.ref('students');
+            studentsRef.on('value', (snapshot) => {
+                const students = snapshot.val();
+                console.log("📊 Students data received:", students);
+                updateDashboard(students);
+            });
+        }
+
+        // ==================== TEACHER DASHBOARD ====================
+        function updateDashboard(students) {
+            const container = document.getElementById('studentsContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            if (!students || Object.keys(students).length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                document.getElementById('dashTotalStudents').textContent = '0';
+                document.getElementById('dashAvgStage').textContent = '0';
+                document.getElementById('dashAvgAccuracy').textContent = '0%';
+                document.getElementById('dashTotalQuestions').textContent = '0';
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            let html = '';
+            let totalStage = 0;
+            let totalQuestions = 0;
+            let totalCorrect = 0;
+            let activeCount = 0;
+
+            const now = Date.now();
+            const ACTIVE_THRESHOLD = 60000; // 1 minute
+
+            Object.keys(students).forEach(key => {
+                const student = students[key];
+                const isActive = student.isActive && (now - (student.lastActive || 0)) < ACTIVE_THRESHOLD;
+                const accuracy = student.totalQuestions > 0 ? Math.round((student.correctAnswers / student.totalQuestions) * 100) : 0;
+                const progressPercent = Math.max(0, (student.stageProgress / 5) * 100);
+
+                totalStage += student.currentStage || 1;
+                totalQuestions += student.totalQuestions || 0;
+                totalCorrect += student.correctAnswers || 0;
+
+                const stageIcon = stages[student.currentStage]?.icon || '🌱';
+                const stageName = stages[student.currentStage]?.name || 'Stage 1';
+
+                html += `
+                    <div class="student-card">
+                        <div class="student-name">
+                            <span class="status-indicator ${isActive ? 'status-active' : 'status-inactive'}"></span>
+                            ${student.name}
+                        </div>
+                        <div class="student-stage">${stageIcon} ${stageName}</div>
+                        <div class="student-stats">
+                            <div class="student-stat">
+                                <span class="student-stat-value">${student.totalQuestions || 0}</span>
+                                <span class="student-stat-label">Questions</span>
+                            </div>
+                            <div class="student-stat">
+                                <span class="student-stat-value">${accuracy}%</span>
+                                <span class="student-stat-label">Accuracy</span>
+                            </div>
+                        </div>
+                        <div class="student-progress">
+                            <div class="student-progress-label">
+                                <span>Stage Progress</span>
+                                <span>${student.stageProgress || 0}/5</span>
+                            </div>
+                            <div class="student-progress-bar">
+                                <div class="student-progress-fill" style="width: ${progressPercent}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Update dashboard stats
+            const studentCount = Object.keys(students).length;
+            const avgStage = studentCount > 0 ? (totalStage / studentCount).toFixed(1) : 0;
+            const avgAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
+            document.getElementById('dashTotalStudents').textContent = studentCount;
+            document.getElementById('dashAvgStage').textContent = avgStage;
+            document.getElementById('dashAvgAccuracy').textContent = avgAccuracy + '%';
+            document.getElementById('dashTotalQuestions').textContent = totalQuestions;
+        }
+
+        // ==================== STUDENT GAME FUNCTIONS ====================
         function updateStageUI() {
             const stage = stages[progression.currentStage];
             document.getElementById('stageName').textContent = stage.name;
@@ -915,7 +1683,7 @@
         }
 
         function updateProgressBar() {
-            const percent = (progression.stageProgress / progression.stageTarget) * 100;
+            const percent = Math.max(0, (progression.stageProgress / progression.stageTarget) * 100);
             document.getElementById('progressFill').style.width = percent + '%';
             document.getElementById('progressText').textContent = `${progression.stageProgress}/${progression.stageTarget} correct`;
             if (percent > 10) {
@@ -925,31 +1693,48 @@
             }
         }
 
-        function showCelebration() {
+        function showCelebration(isDemotion = false) {
             const modal = document.getElementById('celebrationModal');
-            const stage = stages[progression.currentStage];
+            const content = document.querySelector('.celebration-content');
+            const btn = document.getElementById('celebrationBtn');
 
-            const icons = ['🎉', '🎊', '✨', '🌟', '💫', '🎈'];
-            const messages = [
-                "Amazing work! Ready for the next challenge?",
-                "You're getting better and better!",
-                "Fantastic! Keep up the great work!",
-                "Excellent progress! You're a star!",
-                "Brilliant! Let's level up!"
-            ];
+            content.classList.remove('demotion');
 
-            if (progression.currentStage === 5) {
-                document.getElementById('celebrationIcon').textContent = '🏆';
-                document.getElementById('celebrationTitle').textContent = 'You\'re a Master!';
-                document.getElementById('celebrationMessage').textContent = 'Congratulations! You\'ve mastered all stages of parabola analysis!';
+            if (isDemotion) {
+                const prevStage = stages[progression.currentStage - 1];
+                content.classList.add('demotion');
+                document.getElementById('celebrationIcon').textContent = '😰';
+                document.getElementById('celebrationTitle').textContent = 'Stage Demotion!';
+                document.getElementById('celebrationMessage').textContent = `Don't worry! You're moving back to ${prevStage.name}. Review the concepts and you'll master it!`;
+                btn.textContent = 'Continue';
+                btn.onclick = demoteStage;
             } else {
-                document.getElementById('celebrationIcon').textContent = icons[Math.floor(Math.random() * icons.length)];
-                document.getElementById('celebrationTitle').textContent = `${stage.name} Complete!`;
-                document.getElementById('celebrationMessage').textContent = messages[Math.floor(Math.random() * messages.length)];
+                const stage = stages[progression.currentStage];
+                const icons = ['🎉', '🎊', '✨', '🌟', '💫', '🎈'];
+                const messages = [
+                    "Amazing work! Ready for the next challenge?",
+                    "You're getting better and better!",
+                    "Fantastic! Keep up the great work!",
+                    "Excellent progress! You're a star!",
+                    "Brilliant! Let's level up!"
+                ];
+
+                if (progression.currentStage === 5) {
+                    document.getElementById('celebrationIcon').textContent = '🏆';
+                    document.getElementById('celebrationTitle').textContent = 'You\'re a Master!';
+                    document.getElementById('celebrationMessage').textContent = 'Congratulations! You\'ve mastered all stages of parabola analysis!';
+                    btn.textContent = 'Continue Learning';
+                } else {
+                    document.getElementById('celebrationIcon').textContent = icons[Math.floor(Math.random() * icons.length)];
+                    document.getElementById('celebrationTitle').textContent = `${stage.name} Complete!`;
+                    document.getElementById('celebrationMessage').textContent = messages[Math.floor(Math.random() * messages.length)];
+                    btn.textContent = 'Continue to Next Stage';
+                }
+                btn.onclick = advanceStage;
+                createConfetti();
             }
 
             modal.classList.add('show');
-            createConfetti();
         }
 
         function createConfetti() {
@@ -976,10 +1761,32 @@
                 progression.stageProgress = 0;
                 progression.completedStages.push(progression.currentStage - 1);
                 updateStageUI();
+                saveStudentProgress();
                 generateNewQuestion();
             } else {
-                // All stages completed - could add final celebration or restart option
                 updateStageUI();
+                saveStudentProgress();
+                generateNewQuestion();
+            }
+        }
+
+        function demoteStage() {
+            document.getElementById('celebrationModal').classList.remove('show');
+
+            if (progression.currentStage > 1) {
+                progression.currentStage--;
+                progression.stageProgress = 0;
+                const index = progression.completedStages.indexOf(progression.currentStage);
+                if (index > -1) {
+                    progression.completedStages.splice(index, 1);
+                }
+                updateStageUI();
+                saveStudentProgress();
+                generateNewQuestion();
+            } else {
+                progression.stageProgress = 0;
+                updateStageUI();
+                saveStudentProgress();
                 generateNewQuestion();
             }
         }
@@ -996,7 +1803,6 @@
         }
 
         function generateNewQuestion() {
-            // Generate random coefficients
             currentQuestion.a = generateRandomCoefficient(-2, 2, false);
             if (currentQuestion.a > -0.3 && currentQuestion.a < 0.3) {
                 currentQuestion.a = currentQuestion.a > 0 ? 0.5 : -0.5;
@@ -1005,10 +1811,8 @@
             currentQuestion.b = generateRandomCoefficient(-4, 4, true);
             currentQuestion.c = generateRandomCoefficient(-3, 3, true);
 
-            // Update current stage display
             document.getElementById('currentStage').textContent = `Stage ${progression.currentStage}`;
 
-            // Reset UI
             const stage = stages[progression.currentStage];
             userAnswers = { a: null, b: null, c: null, delta: null, axis: null };
 
@@ -1030,12 +1834,10 @@
             const height = canvas.height;
             const { a, b, c } = currentQuestion;
 
-            // Clear canvas
             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim();
             ctx.fillRect(0, 0, width, height);
 
-            // Set up coordinate system
-            const scale = 40; // pixels per unit
+            const scale = 40;
             const originX = width / 2;
             const originY = height / 2;
 
@@ -1044,13 +1846,11 @@
             ctx.lineWidth = 1;
 
             for (let i = -10; i <= 10; i++) {
-                // Vertical lines
                 ctx.beginPath();
                 ctx.moveTo(originX + i * scale, 0);
                 ctx.lineTo(originX + i * scale, height);
                 ctx.stroke();
 
-                // Horizontal lines
                 ctx.beginPath();
                 ctx.moveTo(0, originY + i * scale);
                 ctx.lineTo(width, originY + i * scale);
@@ -1061,13 +1861,11 @@
             ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
             ctx.lineWidth = 2;
 
-            // X-axis
             ctx.beginPath();
             ctx.moveTo(0, originY);
             ctx.lineTo(width, originY);
             ctx.stroke();
 
-            // Y-axis
             ctx.beginPath();
             ctx.moveTo(originX, 0);
             ctx.lineTo(originX, height);
@@ -1117,14 +1915,13 @@
                 ctx.fill();
             }
 
-            // Draw x-intercepts (roots) if they exist
+            // Draw x-intercepts (roots)
             const discriminant = b * b - 4 * a * c;
             if (discriminant >= -0.01) {
                 const sqrtDisc = Math.sqrt(Math.max(0, discriminant));
                 const root1 = (-b + sqrtDisc) / (2 * a);
                 const root2 = (-b - sqrtDisc) / (2 * a);
 
-                // Draw first root
                 const root1Px = originX + root1 * scale;
                 if (root1Px >= 0 && root1Px <= width) {
                     ctx.fillStyle = '#ef4444';
@@ -1136,7 +1933,6 @@
                     ctx.stroke();
                 }
 
-                // Draw second root if different
                 if (Math.abs(discriminant) > 0.01) {
                     const root2Px = originX + root2 * scale;
                     if (root2Px >= 0 && root2Px <= width) {
@@ -1164,16 +1960,13 @@
                 const coeff = this.dataset.coeff;
                 const value = this.dataset.value;
 
-                // Deselect other options for this coefficient
                 document.querySelectorAll(`[data-coeff="${coeff}"]`).forEach(b => {
                     b.classList.remove('selected');
                 });
 
-                // Select this option
                 this.classList.add('selected');
                 userAnswers[coeff] = value;
 
-                // Enable submit button if all required answers are filled
                 const stage = stages[progression.currentStage];
                 const allAnswered = stage.tests.every(test => userAnswers[test] !== null);
                 document.getElementById('submitBtn').disabled = !allAnswered;
@@ -1195,7 +1988,6 @@
             const axisOfSymmetry = -currentQuestion.b / (2 * currentQuestion.a);
             const correctAxis = getSign(axisOfSymmetry);
 
-            // Check only the required answers for current stage
             let isCorrect = true;
             stage.tests.forEach(test => {
                 let correct;
@@ -1210,20 +2002,29 @@
                 }
             });
 
-            // Update stats
             stats.total++;
+            let checkForDemotion = false;
+
             if (isCorrect) {
                 stats.correct++;
                 progression.stageProgress++;
+            } else {
+                progression.stageProgress--;
+
+                if (progression.stageProgress < 0 && progression.currentStage > 1) {
+                    checkForDemotion = true;
+                } else if (progression.stageProgress < 0) {
+                    progression.stageProgress = 0;
+                }
             }
+
             updateStats();
             updateProgressBar();
+            saveStudentProgress();
 
-            // Show feedback
             const feedback = document.getElementById('feedback');
             feedback.classList.add('show');
 
-            // Mark correct/incorrect
             stage.tests.forEach(coeff => {
                 const correct = coeff === 'a' ? correctA :
                                coeff === 'b' ? correctB :
@@ -1260,11 +2061,10 @@
 
                 feedback.innerHTML = details;
 
-                // Check for stage completion
                 if (progression.stageProgress >= progression.stageTarget && progression.currentStage < 5) {
-                    setTimeout(() => showCelebration(), 1000);
+                    setTimeout(() => showCelebration(false), 1000);
                 } else if (progression.stageProgress >= progression.stageTarget && progression.currentStage === 5) {
-                    setTimeout(() => showCelebration(), 1000);
+                    setTimeout(() => showCelebration(false), 1000);
                 }
             } else {
                 feedback.className = 'feedback show error';
@@ -1275,7 +2075,17 @@
                 if (stage.tests.includes('axis')) details += `Axis is ${correctAxis === '+' ? 'positive' : correctAxis === '-' ? 'negative' : 'zero'}, `;
                 if (stage.tests.includes('b')) details += `b is ${correctB === '+' ? 'positive' : correctB === '-' ? 'negative' : 'zero'}`;
 
-                feedback.innerHTML = details + '<br><small>Study the graph and try again!</small>';
+                details += '<br><small>Study the graph and try again!</small>';
+
+                if (progression.stageProgress >= 0) {
+                    details += `<br><small style="color: var(--accent-yellow);">⚠️ Progress: ${progression.stageProgress}/${progression.stageTarget} (-1 for wrong answer)</small>`;
+                }
+
+                feedback.innerHTML = details;
+
+                if (checkForDemotion) {
+                    setTimeout(() => showCelebration(true), 1500);
+                }
             }
 
             document.getElementById('submitBtn').style.display = 'none';
@@ -1288,10 +2098,6 @@
             const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
             document.getElementById('accuracy').textContent = accuracy + '%';
         }
-
-        // Initialize
-        updateStageUI();
-        generateNewQuestion();
     </script>
 </body>
 </html>
