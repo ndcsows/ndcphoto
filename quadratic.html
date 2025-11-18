@@ -692,8 +692,8 @@
                 <span class="stat-label">Accuracy</span>
             </div>
             <div class="stat-card">
-                <span class="stat-value" id="currentDelta">—</span>
-                <span class="stat-label">Discriminant (Δ)</span>
+                <span class="stat-value" id="currentStage">Stage 1</span>
+                <span class="stat-label">Current Level</span>
             </div>
         </div>
 
@@ -1005,19 +1005,8 @@
             currentQuestion.b = generateRandomCoefficient(-4, 4, true);
             currentQuestion.c = generateRandomCoefficient(-3, 3, true);
 
-            // Calculate discriminant
-            const delta = currentQuestion.b * currentQuestion.b - 4 * currentQuestion.a * currentQuestion.c;
-            document.getElementById('currentDelta').textContent = delta.toFixed(2);
-
-            // Color code the delta display
-            const deltaElement = document.getElementById('currentDelta');
-            if (delta > 0.01) {
-                deltaElement.style.color = 'var(--accent-green)';
-            } else if (delta < -0.01) {
-                deltaElement.style.color = 'var(--accent-red)';
-            } else {
-                deltaElement.style.color = 'var(--accent-yellow)';
-            }
+            // Update current stage display
+            document.getElementById('currentStage').textContent = `Stage ${progression.currentStage}`;
 
             // Reset UI
             const stage = stages[progression.currentStage];
