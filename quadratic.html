@@ -1107,6 +1107,149 @@
             background: var(--accent-red);
             color: white;
         }
+
+        /* Groups Section */
+        .groups-section {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .groups-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .groups-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .assign-btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .assign-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .group-card {
+            background: var(--bg-dark);
+            border: 2px solid var(--accent-purple);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--accent-purple);
+            font-weight: 700;
+        }
+
+        .group-members {
+            list-style: none;
+            padding: 0;
+        }
+
+        .group-member {
+            padding: 0.5rem;
+            background: var(--bg-card);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .waiting-state {
+            background: var(--bg-card);
+            border: 2px solid var(--accent-yellow);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+
+        .waiting-state-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .waiting-state-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-yellow);
+            margin-bottom: 0.5rem;
+        }
+
+        .waiting-state-message {
+            color: var(--text-secondary);
+        }
+
+        .group-info-box {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
+            border: 2px solid var(--accent-purple);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .group-info-title {
+            font-weight: 700;
+            color: var(--accent-purple);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .group-members-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .group-member-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: var(--bg-card);
+            border-radius: 6px;
+        }
+
+        .member-name {
+            font-weight: 600;
+        }
+
+        .member-progress {
+            font-size: 0.875rem;
+            color: var(--accent-cyan);
+            font-family: 'Fira Code', monospace;
+        }
     </style>
 </head>
 <body>
@@ -1161,6 +1304,18 @@
             </div>
         </div>
 
+        <!-- Groups Section -->
+        <div class="groups-section">
+            <div class="groups-header">
+                <h2 class="groups-title">👥 Student Groups</h2>
+                <button class="assign-btn" onclick="autoAssignGroups()">🎲 Auto-Assign Groups</button>
+            </div>
+            <div id="groupsContainer" class="groups-grid"></div>
+            <div id="noGroupsMessage" class="empty-state" style="padding: 2rem;">
+                <p style="color: var(--text-secondary);">No groups assigned yet. Click "Auto-Assign Groups" to create groups automatically (2 students per group, or 3 if odd number).</p>
+            </div>
+        </div>
+
         <div class="stats">
             <div class="stat-card">
                 <span class="stat-value" id="dashTotalStudents">0</span>
@@ -1195,6 +1350,28 @@
             <h1>🎯 Parabola Sign Trainer</h1>
             <p class="subtitle">Progressive Learning Journey - <span id="studentNameDisplay"></span> <button class="logout-btn" onclick="logout()" style="margin-left: 1rem; padding: 0.5rem 1rem; font-size: 0.875rem;">Logout</button></p>
         </header>
+
+        <!-- Group Info -->
+        <div class="group-info-box" id="groupInfoBox" style="display: none;">
+            <div class="group-info-title">
+                <span>👥</span>
+                <span>Your Group - Work Together!</span>
+            </div>
+            <div class="group-members-list" id="groupMembersList"></div>
+            <p style="margin-top: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
+                💡 <strong>Team Goal:</strong> All members must answer 5 correct questions together to advance to the next stage!
+            </p>
+        </div>
+
+        <!-- Waiting State -->
+        <div class="waiting-state" id="waitingState" style="display: none;">
+            <div class="waiting-state-icon">⏳</div>
+            <div class="waiting-state-title">Great Job! Now Help Your Teammate!</div>
+            <div class="waiting-state-message">
+                You've completed your 5 correct answers! 🎉<br>
+                Help your group members understand the concepts so you can advance together!
+            </div>
+        </div>
 
         <!-- Stage Progress -->
         <div class="stage-section">
@@ -1403,6 +1580,8 @@
         let studentDataListener = null;
         let studentDataInitialized = false;
         let studentExistenceCheckInterval = null;
+        let currentGroupId = null;
+        let groupDataListener = null;
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -1596,6 +1775,9 @@
             // Load student data
             loadStudentData();
 
+            // Load group data
+            loadGroupData();
+
             // Hide login, show student interface
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('studentInterface').classList.remove('hidden');
@@ -1633,6 +1815,9 @@
 
             // Start listening for student updates
             listenForStudents();
+
+            // Start listening for groups
+            listenForGroups();
         }
 
         function logout() {
@@ -1732,12 +1917,10 @@
             studentRef.once('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    progression.currentStage = data.currentStage || 1;
-                    progression.stageProgress = data.stageProgress || 0;
                     stats.total = data.totalQuestions || 0;
                     stats.correct = data.correctAnswers || 0;
+                    currentGroupId = data.groupId || null;
 
-                    updateStageUI();
                     updateStats();
                 }
             });
@@ -1752,6 +1935,111 @@
                         logout();
                     }, 2000);
                 }
+
+                // Check if group assignment changed
+                const data = snapshot.val();
+                if (data && data.groupId && data.groupId !== currentGroupId) {
+                    currentGroupId = data.groupId;
+                    loadGroupData();
+                }
+            });
+        }
+
+        function loadGroupData() {
+            if (!database) return;
+
+            // First check if student has a group
+            database.ref('students/' + studentId + '/groupId').once('value', (snapshot) => {
+                const groupId = snapshot.val();
+                currentGroupId = groupId;
+
+                if (!groupId) {
+                    // No group assigned yet - use individual mode
+                    document.getElementById('groupInfoBox').style.display = 'none';
+                    progression.currentStage = 1;
+                    progression.stageProgress = 0;
+                    progression.stageTarget = 5;
+                    updateStageUI();
+                    return;
+                }
+
+                // Listen for group updates
+                const groupRef = database.ref('groups/' + groupId);
+                if (groupDataListener) {
+                    groupRef.off('value', groupDataListener);
+                }
+
+                groupDataListener = groupRef.on('value', (groupSnapshot) => {
+                    const groupData = groupSnapshot.val();
+                    if (groupData) {
+                        // Update progression from group data
+                        progression.currentStage = groupData.currentStage || 1;
+
+                        // Display group info
+                        displayGroupInfo(groupData);
+
+                        // Calculate total group progress (sum of all individual progress)
+                        const totalProgress = groupData.members.reduce((sum, m) =>
+                            sum + (groupData.individualProgress?.[m] || 0), 0
+                        );
+
+                        // For progress bar: show how many correct answers the group has collectively
+                        const myProgress = groupData.individualProgress?.[studentId] || 0;
+                        const allComplete = groupData.members.every(m =>
+                            (groupData.individualProgress?.[m] || 0) >= 5
+                        );
+
+                        // Update progress bar to show collective progress
+                        progression.stageProgress = totalProgress;
+                        progression.stageTarget = groupData.members.length * 5; // All members need 5 each
+
+                        if (myProgress >= 5 && !allComplete) {
+                            // Show waiting state
+                            document.getElementById('waitingState').style.display = 'block';
+                            document.getElementById('submitBtn').disabled = true;
+                        } else {
+                            document.getElementById('waitingState').style.display = 'none';
+                        }
+
+                        // If all members complete, trigger stage advancement
+                        if (allComplete) {
+                            setTimeout(() => showCelebration(false), 1000);
+                        }
+
+                        updateStageUI();
+                    }
+                });
+            });
+        }
+
+        function displayGroupInfo(groupData) {
+            if (!groupData) return;
+
+            document.getElementById('groupInfoBox').style.display = 'block';
+            const membersList = document.getElementById('groupMembersList');
+
+            // Get student names
+            const promises = groupData.members.map(memberId =>
+                database.ref('students/' + memberId + '/name').once('value')
+            );
+
+            Promise.all(promises).then(snapshots => {
+                let html = '';
+                groupData.members.forEach((memberId, index) => {
+                    const memberName = snapshots[index].val() || 'Unknown';
+                    const memberProgress = groupData.individualProgress?.[memberId] || 0;
+                    const isMe = memberId === studentId;
+
+                    html += `
+                        <div class="group-member-item">
+                            <span class="member-name">
+                                ${isMe ? '👤 ' : ''}${memberName}${isMe ? ' (You)' : ''}
+                            </span>
+                            <span class="member-progress">${memberProgress}/5 ✓</span>
+                        </div>
+                    `;
+                });
+                membersList.innerHTML = html;
             });
         }
 
@@ -1767,12 +2055,166 @@
             });
         }
 
+        // ==================== GROUP MANAGEMENT FUNCTIONS ====================
+        function autoAssignGroups() {
+            if (!database) {
+                showAlert('Firebase is not configured.', '⚠️');
+                return;
+            }
+
+            console.log("👥 Auto-assigning groups...");
+            const studentsRef = database.ref('students');
+            studentsRef.once('value', (snapshot) => {
+                const students = snapshot.val();
+                if (!students || Object.keys(students).length === 0) {
+                    showAlert('No students logged in yet! Students need to log in before creating groups.', '📚');
+                    return;
+                }
+
+                const studentList = Object.keys(students).map(id => ({
+                    id: id,
+                    name: students[id].name
+                }));
+
+                // Shuffle students randomly
+                for (let i = studentList.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [studentList[i], studentList[j]] = [studentList[j], studentList[i]];
+                }
+
+                // Create groups
+                const groups = [];
+                let groupNumber = 1;
+                for (let i = 0; i < studentList.length; i += 2) {
+                    const groupMembers = [];
+                    groupMembers.push(studentList[i].id);
+
+                    // If this is the last student and we have an odd number, add to previous group
+                    if (i === studentList.length - 1 && groupNumber > 1) {
+                        // Add to previous group
+                        groups[groups.length - 1].members.push(studentList[i].id);
+                        continue;
+                    }
+
+                    // Otherwise, create pair or final group of 3
+                    if (i + 1 < studentList.length) {
+                        groupMembers.push(studentList[i + 1].id);
+                    }
+
+                    groups.push({
+                        id: `group_${groupNumber}`,
+                        number: groupNumber,
+                        members: groupMembers,
+                        currentStage: 1,
+                        individualProgress: {}
+                    });
+                    groupNumber++;
+                }
+
+                // Save groups to Firebase
+                const groupsRef = database.ref('groups');
+                groupsRef.set(null).then(() => {
+                    const updates = {};
+                    groups.forEach(group => {
+                        updates[group.id] = group;
+                        // Initialize individual progress for each member
+                        group.members.forEach(memberId => {
+                            updates[group.id + '/individualProgress/' + memberId] = 0;
+                        });
+                    });
+
+                    // Update students with their group ID
+                    const studentUpdates = {};
+                    groups.forEach(group => {
+                        group.members.forEach(memberId => {
+                            studentUpdates['students/' + memberId + '/groupId'] = group.id;
+                        });
+                    });
+
+                    groupsRef.update(updates).then(() => {
+                        database.ref().update(studentUpdates).then(() => {
+                            console.log("✅ Groups assigned successfully!");
+                            showAlert(`Successfully created ${groups.length} groups!`, '✅');
+                        });
+                    });
+                });
+            });
+        }
+
+        function listenForGroups() {
+            if (!database) return;
+
+            console.log("👀 Teacher dashboard listening for groups...");
+            const groupsRef = database.ref('groups');
+            groupsRef.on('value', (snapshot) => {
+                const groups = snapshot.val();
+                console.log("📊 Groups data received:", groups);
+                updateGroupsDisplay(groups);
+            });
+        }
+
+        function updateGroupsDisplay(groups) {
+            const container = document.getElementById('groupsContainer');
+            const noGroupsMessage = document.getElementById('noGroupsMessage');
+
+            if (!groups || Object.keys(groups).length === 0) {
+                container.innerHTML = '';
+                noGroupsMessage.style.display = 'block';
+                return;
+            }
+
+            noGroupsMessage.style.display = 'none';
+
+            // Get all students for name lookup
+            database.ref('students').once('value', (snapshot) => {
+                const students = snapshot.val() || {};
+
+                let html = '';
+                Object.keys(groups).forEach(groupId => {
+                    const group = groups[groupId];
+                    const stageInfo = stages[group.currentStage] || stages[1];
+
+                    html += `
+                        <div class="group-card">
+                            <div class="group-header">
+                                <span>${stageInfo.icon}</span>
+                                <span>Group ${group.number}</span>
+                            </div>
+                            <ul class="group-members">
+                    `;
+
+                    group.members.forEach(memberId => {
+                        const memberName = students[memberId]?.name || 'Unknown';
+                        const memberProgress = group.individualProgress?.[memberId] || 0;
+                        html += `
+                            <li class="group-member">
+                                ${memberName}: <strong>${memberProgress}/5</strong> correct
+                            </li>
+                        `;
+                    });
+
+                    const allComplete = group.members.every(m => (group.individualProgress?.[m] || 0) >= 5);
+                    html += `
+                            </ul>
+                            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); text-align: center;">
+                                <small style="color: var(--text-secondary);">
+                                    ${allComplete ? '✅ Ready to advance!' : '⏳ Working together...'}
+                                </small>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            });
+        }
+
         // ==================== CLEAR STUDENTS FUNCTION ====================
         function confirmClearAllStudents() {
             showConfirm(
                 'Are you sure you want to remove all students from the database? This action cannot be undone!',
                 clearAllStudents,
-                '����️'
+                '🗑️'
             );
         }
 
@@ -1782,16 +2224,19 @@
                 return;
             }
 
-            console.log("🗑️ Clearing all students...");
+            console.log("🗑️ Clearing all students and groups...");
             const studentsRef = database.ref('students');
-            studentsRef.remove()
+            const groupsRef = database.ref('groups');
+
+            // Clear both students and groups
+            Promise.all([studentsRef.remove(), groupsRef.remove()])
                 .then(() => {
-                    console.log("✅ All students cleared successfully!");
-                    showAlert('All students have been removed from the database.', '✅');
+                    console.log("✅ All students and groups cleared successfully!");
+                    showAlert('All students and groups have been removed from the database.', '✅');
                 })
                 .catch((error) => {
-                    console.error("❌ Error clearing students:", error);
-                    showAlert('Error clearing students: ' + error.message, '❌');
+                    console.error("❌ Error clearing data:", error);
+                    showAlert('Error clearing data: ' + error.message, '❌');
                 });
         }
 
@@ -1914,7 +2359,14 @@
         function updateProgressBar() {
             const percent = Math.max(0, (progression.stageProgress / progression.stageTarget) * 100);
             document.getElementById('progressFill').style.width = percent + '%';
-            document.getElementById('progressText').textContent = `${progression.stageProgress}/${progression.stageTarget} correct`;
+
+            // Show different text if in group mode
+            if (currentGroupId && progression.stageTarget > 5) {
+                document.getElementById('progressText').textContent = `${progression.stageProgress}/${progression.stageTarget} team correct`;
+            } else {
+                document.getElementById('progressText').textContent = `${progression.stageProgress}/${progression.stageTarget} correct`;
+            }
+
             if (percent > 10) {
                 document.getElementById('progressPercent').textContent = Math.round(percent) + '%';
             } else {
@@ -1985,17 +2437,40 @@
         function advanceStage() {
             document.getElementById('celebrationModal').classList.remove('show');
 
-            if (progression.currentStage < 5) {
-                progression.currentStage++;
-                progression.stageProgress = 0;
-                progression.completedStages.push(progression.currentStage - 1);
-                updateStageUI();
-                saveStudentProgress();
+            if (currentGroupId && database) {
+                // Group mode - update group stage and reset all individual progress
+                if (progression.currentStage < 5) {
+                    database.ref(`groups/${currentGroupId}`).transaction(groupData => {
+                        if (groupData) {
+                            groupData.currentStage = (groupData.currentStage || 1) + 1;
+                            // Reset all individual progress
+                            if (groupData.members) {
+                                groupData.members.forEach(memberId => {
+                                    groupData.individualProgress[memberId] = 0;
+                                });
+                            }
+                        }
+                        return groupData;
+                    });
+                }
+                // Re-enable submit button
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('waitingState').style.display = 'none';
                 generateNewQuestion();
             } else {
-                updateStageUI();
-                saveStudentProgress();
-                generateNewQuestion();
+                // No group - use old system
+                if (progression.currentStage < 5) {
+                    progression.currentStage++;
+                    progression.stageProgress = 0;
+                    progression.completedStages.push(progression.currentStage - 1);
+                    updateStageUI();
+                    saveStudentProgress();
+                    generateNewQuestion();
+                } else {
+                    updateStageUI();
+                    saveStudentProgress();
+                    generateNewQuestion();
+                }
             }
         }
 
@@ -2236,14 +2711,33 @@
 
             if (isCorrect) {
                 stats.correct++;
-                progression.stageProgress++;
-            } else {
-                progression.stageProgress--;
 
-                if (progression.stageProgress < 0 && progression.currentStage > 1) {
-                    checkForDemotion = true;
-                } else if (progression.stageProgress < 0) {
-                    progression.stageProgress = 0;
+                // Update individual progress in group if in a group
+                if (currentGroupId && database) {
+                    database.ref(`groups/${currentGroupId}/individualProgress/${studentId}`).transaction(currentProgress => {
+                        return Math.min(5, (currentProgress || 0) + 1);
+                    });
+                } else {
+                    // No group - use old system
+                    progression.stageProgress++;
+                }
+            } else {
+                // Wrong answer - deduct individual progress
+                if (currentGroupId && database) {
+                    database.ref(`groups/${currentGroupId}/individualProgress/${studentId}`).transaction(currentProgress => {
+                        const newProgress = (currentProgress || 0) - 1;
+                        if (newProgress < 0 && progression.currentStage > 1) {
+                            checkForDemotion = true;
+                        }
+                        return Math.max(0, newProgress);
+                    });
+                } else {
+                    progression.stageProgress--;
+                    if (progression.stageProgress < 0 && progression.currentStage > 1) {
+                        checkForDemotion = true;
+                    } else if (progression.stageProgress < 0) {
+                        progression.stageProgress = 0;
+                    }
                 }
             }
 
