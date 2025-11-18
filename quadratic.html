@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parabola Sign Trainer - Progressive Learning</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-cyan: #06b6d4;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-dark: #f8fafc;
+                --bg-card: #ffffff;
+                --bg-hover: #f1f5f9;
+                --accent-blue: #2563eb;
+                --accent-green: #059669;
+                --accent-red: #dc2626;
+                --accent-yellow: #d97706;
+                --accent-purple: #7c3aed;
+                --accent-pink: #db2777;
+                --accent-cyan: #0891b2;
+                --text-primary: #0f172a;
+                --text-secondary: #475569;
+                --border: #e2e8f0;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 1rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-family: 'Fira Code', monospace;
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Stage Progress Section */
+        .stage-section {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.3);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .stage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .stage-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stage-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .stage-description {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .progress-container {
+            margin-top: 1rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .progress-bar {
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+            border-radius: 12px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .stage-badges-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .mini-badge {
+            text-align: center;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .mini-badge.completed {
+            background: rgba(16, 185, 129, 0.3);
+            border-color: var(--accent-green);
+            transform: scale(1.05);
+        }
+
+        .mini-badge.current {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .mini-badge-icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            padding: 1.25rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Fira Code', monospace;
+            color: var(--accent-blue);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .equation-display {
+            font-family: 'Fira Code', monospace;
+            font-size: 1.5rem;
+            text-align: center;
+            padding: 1.5rem;
+            background: var(--bg-dark);
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 2px solid var(--accent-blue);
+        }
+
+        .canvas-container {
+            position: relative;
+            background: var(--bg-dark);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        #canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .coefficient-question {
+            background: var(--bg-dark);
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .coefficient-question.hidden {
+            display: none;
+        }
+
+        .coefficient-question.locked {
+            opacity: 0.5;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .coefficient-question.locked::after {
+            content: '🔒 Unlock in next stage';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-card);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .coeff-label {
+            font-family: 'Fira Code', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: block;
+            color: var(--accent-yellow);
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .option-btn {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            padding: 0.875rem;
+            border: 2px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        .option-btn:hover {
+            background: var(--bg-hover);
+            transform: translateY(-2px);
+        }
+
+        .option-btn.selected {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        .option-btn.correct {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: white;
+        }
+
+        .option-btn.incorrect {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            color: white;
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .submit-btn {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.125rem;
+            font-weight: 600;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .next-btn {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+        }
+
+        .feedback {
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            border-radius: 12px;
+            font-weight: 500;
+            display: none;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 2px solid var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .feedback.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 2px solid var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .hints {
+            background: var(--bg-dark);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--accent-yellow);
+            margin-top: 1.5rem;
+        }
+
+        .hints h3 {
+            color: var(--accent-yellow);
+            margin-bottom: 1rem;
+            font-size: 1.125rem;
+        }
+
+        .hints ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .hints li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .hints li:before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: var(--accent-yellow);
+        }
+
+        /* Celebration Modal */
+        .celebration-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .celebration-modal.show {
+            display: flex;
+        }
+
+        .celebration-content {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            padding: 3rem;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 500px;
+            color: white;
+            animation: bounceIn 0.6s ease;
+            position: relative;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .celebration-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            animation: rotate 1s ease;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg) scale(0); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        .celebration-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .celebration-message {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .celebration-btn {
+            background: white;
+            color: var(--accent-purple);
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.125rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .celebration-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            animation: confettiFall 3s linear infinite;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(500px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .options {
+                grid-template-columns: 1fr;
+            }
+
+            .stage-badges-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .celebration-content {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .celebration-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Parabola Sign Trainer</h1>
+            <p class="subtitle">Progressive Learning Journey</p>
+        </header>
+
+        <!-- Stage Progress -->
+        <div class="stage-section">
+            <div class="stage-header">
+                <div class="stage-title">
+                    <span id="stageIcon">🌱</span>
+                    <span id="stageName">Stage 1: Beginner</span>
+                </div>
+                <div class="stage-badge" id="stageBadge">Level 1/5</div>
+            </div>
+            <div class="stage-description" id="stageDescription">
+                Learn to identify the sign of coefficient 'a' - Does the parabola open upward or downward?
+            </div>
+            <div class="progress-container">
+                <div class="progress-label">
+                    <span>Progress to Next Stage</span>
+                    <span id="progressText">0/5 correct</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%">
+                        <span id="progressPercent"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="stage-badges-container">
+                <div class="mini-badge current" id="badge1">
+                    <div class="mini-badge-icon">🌱</div>
+                    <div>Stage 1</div>
+                </div>
+                <div class="mini-badge" id="badge2">
+                    <div class="mini-badge-icon">🌿</div>
+                    <div>Stage 2</div>
+                </div>
+                <div class="mini-badge" id="badge3">
+                    <div class="mini-badge-icon">🌳</div>
+                    <div>Stage 3</div>
+                </div>
+                <div class="mini-badge" id="badge4">
+                    <div class="mini-badge-icon">⭐</div>
+                    <div>Stage 4</div>
+                </div>
+                <div class="mini-badge" id="badge5">
+                    <div class="mini-badge-icon">🏆</div>
+                    <div>Stage 5</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <span class="stat-value" id="totalQuestions">0</span>
+                <span class="stat-label">Questions</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="correctAnswers">0</span>
+                <span class="stat-label">Correct</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="accuracy">0%</span>
+                <span class="stat-label">Accuracy</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="currentDelta">—</span>
+                <span class="stat-label">Discriminant (Δ)</span>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="card">
+                <h2>📊 Graph</h2>
+                <div class="equation-display" id="equationDisplay">
+                    y = ax² + bx + c
+                </div>
+                <div class="canvas-container">
+                    <canvas id="canvas" width="600" height="600"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>❓ Identify the Signs</h2>
+
+                <div class="coefficient-question" id="questionA">
+                    <label class="coeff-label">Sign of a:</label>
+                    <div class="options">
+                        <button class="option-btn" data-coeff="a" data-value="+">Positive (+)</button>
+                        <button class="option-btn" data-coeff="a" data-value="0">Zero (0)</button>
+                        <button class="option-btn" data-coeff="a" data-value="-">Negative (−)</button>
+                    </div>
+                </div>
+
+                <div class="coefficient-question hidden" id="questionC">
+                    <label class="coeff-label">Sign of c:</label>
+                    <div class="options">
+                        <button class="option-btn" data-coeff="c" data-value="+">Positive (+)</button>
+                        <button class="option-btn" data-coeff="c" data-value="0">Zero (0)</button>
+                        <button class="option-btn" data-coeff="c" data-value="-">Negative (−)</button>
+                    </div>
+                </div>
+
+                <div class="coefficient-question hidden" id="questionDelta" style="border: 2px solid var(--accent-purple); background: rgba(139, 92, 246, 0.1);">
+                    <label class="coeff-label" style="color: var(--accent-purple);">Sign of Δ (b² - 4ac):</label>
+                    <div class="options">
+                        <button class="option-btn" data-coeff="delta" data-value="+">Positive (+)</button>
+                        <button class="option-btn" data-coeff="delta" data-value="0">Zero (0)</button>
+                        <button class="option-btn" data-coeff="delta" data-value="-">Negative (−)</button>
+                    </div>
+                </div>
+
+                <div class="coefficient-question hidden" id="questionAxis" style="border: 2px solid var(--accent-cyan); background: rgba(6, 182, 212, 0.1);">
+                    <label class="coeff-label" style="color: var(--accent-cyan);">Sign of Axis of Symmetry (x-coordinate of vertex):</label>
+                    <div class="options">
+                        <button class="option-btn" data-coeff="axis" data-value="+">Positive (+)</button>
+                        <button class="option-btn" data-coeff="axis" data-value="0">Zero (0)</button>
+                        <button class="option-btn" data-coeff="axis" data-value="-">Negative (−)</button>
+                    </div>
+                </div>
+
+                <div class="coefficient-question hidden" id="questionB">
+                    <label class="coeff-label">Sign of b:</label>
+                    <div class="options">
+                        <button class="option-btn" data-coeff="b" data-value="+">Positive (+)</button>
+                        <button class="option-btn" data-coeff="b" data-value="0">Zero (0)</button>
+                        <button class="option-btn" data-coeff="b" data-value="-">Negative (−)</button>
+                    </div>
+                </div>
+
+                <button class="submit-btn" id="submitBtn" onclick="checkAnswer()">Check Answer</button>
+                <button class="submit-btn next-btn" id="nextBtn" onclick="generateNewQuestion()" style="display: none;">Next Question</button>
+
+                <div class="feedback" id="feedback"></div>
+
+                <div class="hints">
+                    <h3 id="hintsTitle">💡 Quick Tips - Stage 1</h3>
+                    <ul id="hintsList">
+                        <li><strong>a positive:</strong> Parabola opens upward (∪) - like a smile</li>
+                        <li><strong>a negative:</strong> Parabola opens downward (∩) - like a frown</li>
+                        <li>Look at the direction the parabola opens!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Modal -->
+    <div class="celebration-modal" id="celebrationModal">
+        <div class="celebration-content">
+            <div class="celebration-icon" id="celebrationIcon">🎉</div>
+            <div class="celebration-title" id="celebrationTitle">Stage Complete!</div>
+            <div class="celebration-message" id="celebrationMessage">
+                Congratulations! You've mastered this stage.
+            </div>
+            <button class="celebration-btn" onclick="advanceStage()">Continue to Next Stage</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentQuestion = {
+            a: 0,
+            b: 0,
+            c: 0
+        };
+
+        let userAnswers = {
+            a: null,
+            b: null,
+            c: null,
+            delta: null,
+            axis: null
+        };
+
+        let stats = {
+            total: 0,
+            correct: 0
+        };
+
+        let progression = {
+            currentStage: 1,
+            stageProgress: 0,
+            stageTarget: 5,
+            completedStages: []
+        };
+
+        const stages = {
+            1: {
+                name: "Stage 1: Beginner",
+                icon: "🌱",
+                description: "Learn to identify the sign of coefficient 'a' - Does the parabola open upward or downward?",
+                tests: ['a'],
+                hints: [
+                    "<strong>a positive:</strong> Parabola opens upward (∪) - like a smile",
+                    "<strong>a negative:</strong> Parabola opens downward (∩) - like a frown",
+                    "Look at the direction the parabola opens!"
+                ]
+            },
+            2: {
+                name: "Stage 2: Explorer",
+                icon: "🌿",
+                description: "Now identify both 'a' and 'c' - Learn where the parabola crosses the y-axis!",
+                tests: ['a', 'c'],
+                hints: [
+                    "<strong>a:</strong> Opens upward if positive (∪), downward if negative (∩)",
+                    "<strong>c:</strong> Y-intercept (where graph crosses y-axis) 🟠",
+                    "c is positive if the orange dot is above the x-axis",
+                    "c is negative if the orange dot is below the x-axis"
+                ]
+            },
+            3: {
+                name: "Stage 3: Investigator",
+                icon: "🌳",
+                description: "Master 'a', 'c', and the discriminant Δ - Count the x-intercepts!",
+                tests: ['a', 'c', 'delta'],
+                hints: [
+                    "<strong>Δ > 0:</strong> Two x-intercepts (red dots) 🔴🔴",
+                    "<strong>Δ = 0:</strong> One x-intercept (touches x-axis) 🔴",
+                    "<strong>Δ < 0:</strong> No x-intercepts (doesn't cross x-axis)",
+                    "<strong>c:</strong> Y-intercept 🟠",
+                    "Count the red dots to determine Δ's sign!"
+                ]
+            },
+            4: {
+                name: "Stage 4: Expert",
+                icon: "⭐",
+                description: "Add axis of symmetry - Where is the vertex located horizontally?",
+                tests: ['a', 'c', 'delta', 'axis'],
+                hints: [
+                    "<strong>Axis > 0:</strong> Vertex 🟣 is on the right side of y-axis",
+                    "<strong>Axis = 0:</strong> Vertex 🟣 is on the y-axis",
+                    "<strong>Axis < 0:</strong> Vertex 🟣 is on the left side of y-axis",
+                    "<strong>Δ:</strong> Count the red dots 🔴",
+                    "The purple vertex shows the axis of symmetry!"
+                ]
+            },
+            5: {
+                name: "Stage 5: Master",
+                icon: "🏆",
+                description: "Complete challenge - All coefficients! You're a parabola expert now!",
+                tests: ['a', 'b', 'c', 'delta', 'axis'],
+                hints: [
+                    "<strong>a:</strong> Opens upward (+) or downward (−)",
+                    "<strong>b:</strong> If vertex 🟣 on right & opens up, b is negative",
+                    "<strong>b:</strong> If vertex 🟣 on left & opens up, b is positive",
+                    "<strong>c:</strong> Y-intercept 🟠 position",
+                    "<strong>Δ:</strong> Number of red dots 🔴",
+                    "<strong>Axis:</strong> Vertex 🟣 horizontal position"
+                ]
+            }
+        };
+
+        function updateStageUI() {
+            const stage = stages[progression.currentStage];
+            document.getElementById('stageName').textContent = stage.name;
+            document.getElementById('stageIcon').textContent = stage.icon;
+            document.getElementById('stageBadge').textContent = `Level ${progression.currentStage}/5`;
+            document.getElementById('stageDescription').textContent = stage.description;
+
+            // Update hints
+            document.getElementById('hintsTitle').textContent = `💡 Quick Tips - ${stage.name}`;
+            const hintsList = document.getElementById('hintsList');
+            hintsList.innerHTML = stage.hints.map(hint => `<li>${hint}</li>`).join('');
+
+            // Show/hide questions based on stage
+            document.getElementById('questionA').classList.remove('hidden');
+            document.getElementById('questionC').classList.toggle('hidden', !stage.tests.includes('c'));
+            document.getElementById('questionDelta').classList.toggle('hidden', !stage.tests.includes('delta'));
+            document.getElementById('questionAxis').classList.toggle('hidden', !stage.tests.includes('axis'));
+            document.getElementById('questionB').classList.toggle('hidden', !stage.tests.includes('b'));
+
+            // Update badge indicators
+            for (let i = 1; i <= 5; i++) {
+                const badge = document.getElementById(`badge${i}`);
+                badge.classList.remove('completed', 'current');
+                if (i < progression.currentStage) {
+                    badge.classList.add('completed');
+                } else if (i === progression.currentStage) {
+                    badge.classList.add('current');
+                }
+            }
+
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            const percent = (progression.stageProgress / progression.stageTarget) * 100;
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = `${progression.stageProgress}/${progression.stageTarget} correct`;
+            if (percent > 10) {
+                document.getElementById('progressPercent').textContent = Math.round(percent) + '%';
+            } else {
+                document.getElementById('progressPercent').textContent = '';
+            }
+        }
+
+        function showCelebration() {
+            const modal = document.getElementById('celebrationModal');
+            const stage = stages[progression.currentStage];
+
+            const icons = ['🎉', '🎊', '✨', '🌟', '💫', '🎈'];
+            const messages = [
+                "Amazing work! Ready for the next challenge?",
+                "You're getting better and better!",
+                "Fantastic! Keep up the great work!",
+                "Excellent progress! You're a star!",
+                "Brilliant! Let's level up!"
+            ];
+
+            if (progression.currentStage === 5) {
+                document.getElementById('celebrationIcon').textContent = '🏆';
+                document.getElementById('celebrationTitle').textContent = 'You\'re a Master!';
+                document.getElementById('celebrationMessage').textContent = 'Congratulations! You\'ve mastered all stages of parabola analysis!';
+            } else {
+                document.getElementById('celebrationIcon').textContent = icons[Math.floor(Math.random() * icons.length)];
+                document.getElementById('celebrationTitle').textContent = `${stage.name} Complete!`;
+                document.getElementById('celebrationMessage').textContent = messages[Math.floor(Math.random() * messages.length)];
+            }
+
+            modal.classList.add('show');
+            createConfetti();
+        }
+
+        function createConfetti() {
+            const content = document.querySelector('.celebration-content');
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                content.appendChild(confetti);
+
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+
+        function advanceStage() {
+            document.getElementById('celebrationModal').classList.remove('show');
+
+            if (progression.currentStage < 5) {
+                progression.currentStage++;
+                progression.stageProgress = 0;
+                progression.completedStages.push(progression.currentStage - 1);
+                updateStageUI();
+                generateNewQuestion();
+            } else {
+                // All stages completed - could add final celebration or restart option
+                updateStageUI();
+                generateNewQuestion();
+            }
+        }
+
+        function generateRandomCoefficient(min, max, allowZero = false) {
+            let val;
+            do {
+                val = Math.random() * (max - min) + min;
+                if (allowZero && Math.abs(val) < 0.5) {
+                    val = 0;
+                }
+            } while (Math.abs(val) < 0.1 && val !== 0);
+            return val;
+        }
+
+        function generateNewQuestion() {
+            // Generate random coefficients
+            currentQuestion.a = generateRandomCoefficient(-2, 2, false);
+            if (currentQuestion.a > -0.3 && currentQuestion.a < 0.3) {
+                currentQuestion.a = currentQuestion.a > 0 ? 0.5 : -0.5;
+            }
+
+            currentQuestion.b = generateRandomCoefficient(-4, 4, true);
+            currentQuestion.c = generateRandomCoefficient(-3, 3, true);
+
+            // Calculate discriminant
+            const delta = currentQuestion.b * currentQuestion.b - 4 * currentQuestion.a * currentQuestion.c;
+            document.getElementById('currentDelta').textContent = delta.toFixed(2);
+
+            // Color code the delta display
+            const deltaElement = document.getElementById('currentDelta');
+            if (delta > 0.01) {
+                deltaElement.style.color = 'var(--accent-green)';
+            } else if (delta < -0.01) {
+                deltaElement.style.color = 'var(--accent-red)';
+            } else {
+                deltaElement.style.color = 'var(--accent-yellow)';
+            }
+
+            // Reset UI
+            const stage = stages[progression.currentStage];
+            userAnswers = { a: null, b: null, c: null, delta: null, axis: null };
+
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected', 'correct', 'incorrect');
+                btn.disabled = false;
+            });
+
+            document.getElementById('submitBtn').style.display = 'block';
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('feedback').classList.remove('show');
+
+            drawParabola();
+        }
+
+        function drawParabola() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const { a, b, c } = currentQuestion;
+
+            // Clear canvas
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim();
+            ctx.fillRect(0, 0, width, height);
+
+            // Set up coordinate system
+            const scale = 40; // pixels per unit
+            const originX = width / 2;
+            const originY = height / 2;
+
+            // Draw grid
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+            ctx.lineWidth = 1;
+
+            for (let i = -10; i <= 10; i++) {
+                // Vertical lines
+                ctx.beginPath();
+                ctx.moveTo(originX + i * scale, 0);
+                ctx.lineTo(originX + i * scale, height);
+                ctx.stroke();
+
+                // Horizontal lines
+                ctx.beginPath();
+                ctx.moveTo(0, originY + i * scale);
+                ctx.lineTo(width, originY + i * scale);
+                ctx.stroke();
+            }
+
+            // Draw axes
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+            ctx.lineWidth = 2;
+
+            // X-axis
+            ctx.beginPath();
+            ctx.moveTo(0, originY);
+            ctx.lineTo(width, originY);
+            ctx.stroke();
+
+            // Y-axis
+            ctx.beginPath();
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, height);
+            ctx.stroke();
+
+            // Draw parabola
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            let firstPoint = true;
+            for (let px = 0; px < width; px++) {
+                const x = (px - originX) / scale;
+                const y = a * x * x + b * x + c;
+                const py = originY - y * scale;
+
+                if (py >= 0 && py <= height) {
+                    if (firstPoint) {
+                        ctx.moveTo(px, py);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+            }
+            ctx.stroke();
+
+            // Draw vertex
+            const vertexX = -b / (2 * a);
+            const vertexY = a * vertexX * vertexX + b * vertexX + c;
+            const vertexPx = originX + vertexX * scale;
+            const vertexPy = originY - vertexY * scale;
+
+            if (vertexPx >= 0 && vertexPx <= width && vertexPy >= 0 && vertexPy <= height) {
+                ctx.fillStyle = '#8b5cf6';
+                ctx.beginPath();
+                ctx.arc(vertexPx, vertexPy, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            // Draw y-intercept
+            const interceptPy = originY - c * scale;
+            if (interceptPy >= 0 && interceptPy <= height) {
+                ctx.fillStyle = '#f59e0b';
+                ctx.beginPath();
+                ctx.arc(originX, interceptPy, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            // Draw x-intercepts (roots) if they exist
+            const discriminant = b * b - 4 * a * c;
+            if (discriminant >= -0.01) {
+                const sqrtDisc = Math.sqrt(Math.max(0, discriminant));
+                const root1 = (-b + sqrtDisc) / (2 * a);
+                const root2 = (-b - sqrtDisc) / (2 * a);
+
+                // Draw first root
+                const root1Px = originX + root1 * scale;
+                if (root1Px >= 0 && root1Px <= width) {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(root1Px, originY, 7, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Draw second root if different
+                if (Math.abs(discriminant) > 0.01) {
+                    const root2Px = originX + root2 * scale;
+                    if (root2Px >= 0 && root2Px <= width) {
+                        ctx.fillStyle = '#ef4444';
+                        ctx.beginPath();
+                        ctx.arc(root2Px, originY, 7, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw axis labels
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+            ctx.font = '14px Fira Code';
+            ctx.fillText('x', width - 20, originY - 10);
+            ctx.fillText('y', originX + 10, 20);
+        }
+
+        // Handle option selection
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const coeff = this.dataset.coeff;
+                const value = this.dataset.value;
+
+                // Deselect other options for this coefficient
+                document.querySelectorAll(`[data-coeff="${coeff}"]`).forEach(b => {
+                    b.classList.remove('selected');
+                });
+
+                // Select this option
+                this.classList.add('selected');
+                userAnswers[coeff] = value;
+
+                // Enable submit button if all required answers are filled
+                const stage = stages[progression.currentStage];
+                const allAnswered = stage.tests.every(test => userAnswers[test] !== null);
+                document.getElementById('submitBtn').disabled = !allAnswered;
+            });
+        });
+
+        function getSign(num) {
+            if (Math.abs(num) < 0.01) return '0';
+            return num > 0 ? '+' : '-';
+        }
+
+        function checkAnswer() {
+            const stage = stages[progression.currentStage];
+            const correctA = getSign(currentQuestion.a);
+            const correctB = getSign(currentQuestion.b);
+            const correctC = getSign(currentQuestion.c);
+            const discriminant = currentQuestion.b * currentQuestion.b - 4 * currentQuestion.a * currentQuestion.c;
+            const correctDelta = getSign(discriminant);
+            const axisOfSymmetry = -currentQuestion.b / (2 * currentQuestion.a);
+            const correctAxis = getSign(axisOfSymmetry);
+
+            // Check only the required answers for current stage
+            let isCorrect = true;
+            stage.tests.forEach(test => {
+                let correct;
+                if (test === 'a') correct = correctA;
+                else if (test === 'b') correct = correctB;
+                else if (test === 'c') correct = correctC;
+                else if (test === 'delta') correct = correctDelta;
+                else if (test === 'axis') correct = correctAxis;
+
+                if (userAnswers[test] !== correct) {
+                    isCorrect = false;
+                }
+            });
+
+            // Update stats
+            stats.total++;
+            if (isCorrect) {
+                stats.correct++;
+                progression.stageProgress++;
+            }
+            updateStats();
+            updateProgressBar();
+
+            // Show feedback
+            const feedback = document.getElementById('feedback');
+            feedback.classList.add('show');
+
+            // Mark correct/incorrect
+            stage.tests.forEach(coeff => {
+                const correct = coeff === 'a' ? correctA :
+                               coeff === 'b' ? correctB :
+                               coeff === 'c' ? correctC :
+                               coeff === 'delta' ? correctDelta : correctAxis;
+                document.querySelectorAll(`[data-coeff="${coeff}"]`).forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.dataset.value === correct) {
+                        btn.classList.add('correct');
+                        btn.classList.remove('selected');
+                    } else if (btn.classList.contains('selected')) {
+                        btn.classList.add('incorrect');
+                    }
+                });
+            });
+
+            if (isCorrect) {
+                feedback.className = 'feedback show success';
+                const encouragements = [
+                    "✅ Perfect! Great job!",
+                    "✅ Excellent work!",
+                    "✅ You got it right!",
+                    "✅ Amazing! Keep it up!",
+                    "✅ Fantastic! You're a star!"
+                ];
+                const encouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
+
+                let details = `<strong>${encouragement}</strong><br>`;
+                if (stage.tests.includes('a')) details += `a = ${currentQuestion.a.toFixed(2)} (${correctA}), `;
+                if (stage.tests.includes('c')) details += `c = ${currentQuestion.c.toFixed(2)} (${correctC}), `;
+                if (stage.tests.includes('delta')) details += `Δ = ${discriminant.toFixed(2)} (${correctDelta}), `;
+                if (stage.tests.includes('axis')) details += `Axis = ${axisOfSymmetry.toFixed(2)} (${correctAxis}), `;
+                if (stage.tests.includes('b')) details += `b = ${currentQuestion.b.toFixed(2)} (${correctB})`;
+
+                feedback.innerHTML = details;
+
+                // Check for stage completion
+                if (progression.stageProgress >= progression.stageTarget && progression.currentStage < 5) {
+                    setTimeout(() => showCelebration(), 1000);
+                } else if (progression.stageProgress >= progression.stageTarget && progression.currentStage === 5) {
+                    setTimeout(() => showCelebration(), 1000);
+                }
+            } else {
+                feedback.className = 'feedback show error';
+                let details = `<strong>❌ Not quite! Let's review:</strong><br>`;
+                if (stage.tests.includes('a')) details += `a is ${correctA === '+' ? 'positive' : correctA === '-' ? 'negative' : 'zero'}, `;
+                if (stage.tests.includes('c')) details += `c is ${correctC === '+' ? 'positive' : correctC === '-' ? 'negative' : 'zero'}, `;
+                if (stage.tests.includes('delta')) details += `Δ is ${correctDelta === '+' ? 'positive' : correctDelta === '-' ? 'negative' : 'zero'}, `;
+                if (stage.tests.includes('axis')) details += `Axis is ${correctAxis === '+' ? 'positive' : correctAxis === '-' ? 'negative' : 'zero'}, `;
+                if (stage.tests.includes('b')) details += `b is ${correctB === '+' ? 'positive' : correctB === '-' ? 'negative' : 'zero'}`;
+
+                feedback.innerHTML = details + '<br><small>Study the graph and try again!</small>';
+            }
+
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function updateStats() {
+            document.getElementById('totalQuestions').textContent = stats.total;
+            document.getElementById('correctAnswers').textContent = stats.correct;
+            const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+        }
+
+        // Initialize
+        updateStageUI();
+        generateNewQuestion();
+    </script>
+</body>
+</html>
