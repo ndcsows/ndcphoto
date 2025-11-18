@@ -2020,9 +2020,39 @@
                             document.getElementById('waitingState').style.display = 'none';
                         }
 
-                        // If all members complete, trigger stage advancement
-                        if (allComplete) {
-                            setTimeout(() => showCelebration(false), 1000);
+                        // If all members complete, auto-advance stage and show celebration
+                        if (allComplete && !groupData.stageCompleting) {
+                            // Mark that stage is advancing to prevent duplicate triggers
+                            database.ref(`groups/${currentGroupId}/stageCompleting`).set(true);
+
+                            // Auto-advance to next stage
+                            if (progression.currentStage < 5) {
+                                database.ref(`groups/${currentGroupId}`).transaction(gData => {
+                                    if (gData && !gData.stageAdvanced) {
+                                        gData.currentStage = (gData.currentStage || 1) + 1;
+                                        gData.stageAdvanced = true;
+                                        gData.stageCompleting = false;
+                                        // Reset all individual progress
+                                        if (gData.members) {
+                                            gData.members.forEach(memberId => {
+                                                gData.individualProgress[memberId] = 0;
+                                            });
+                                        }
+                                    }
+                                    return gData;
+                                }).then(() => {
+                                    // Remove the stageAdvanced flag after a delay
+                                    setTimeout(() => {
+                                        database.ref(`groups/${currentGroupId}/stageAdvanced`).set(false);
+                                    }, 2000);
+
+                                    // Show celebration
+                                    setTimeout(() => showCelebration(false), 500);
+                                });
+                            } else {
+                                // Final stage complete
+                                setTimeout(() => showCelebration(false), 500);
+                            }
                         }
 
                         updateStageUI();
@@ -2485,21 +2515,7 @@
             document.getElementById('celebrationModal').classList.remove('show');
 
             if (currentGroupId && database) {
-                // Group mode - update group stage and reset all individual progress
-                if (progression.currentStage < 5) {
-                    database.ref(`groups/${currentGroupId}`).transaction(groupData => {
-                        if (groupData) {
-                            groupData.currentStage = (groupData.currentStage || 1) + 1;
-                            // Reset all individual progress
-                            if (groupData.members) {
-                                groupData.members.forEach(memberId => {
-                                    groupData.individualProgress[memberId] = 0;
-                                });
-                            }
-                        }
-                        return groupData;
-                    });
-                }
+                // Group mode - stage already auto-advanced, just close modal and start new question
                 // Re-enable submit button
                 document.getElementById('submitBtn').disabled = false;
                 document.getElementById('waitingState').style.display = 'none';
