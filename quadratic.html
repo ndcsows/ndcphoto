@@ -1403,6 +1403,7 @@
         let studentId = null;
         let studentDataListener = null;
         let studentDataInitialized = false;
+        let studentExistenceCheckInterval = null;
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -1604,6 +1605,9 @@
             // Start heartbeat
             startHeartbeat();
 
+            // Start periodic existence check (important for mobile browsers)
+            startStudentExistenceCheck();
+
             // Initialize game
             updateStageUI();
             generateNewQuestion();
@@ -1634,6 +1638,12 @@
 
         function logout() {
             if (currentRole === 'student' && studentId) {
+                // Clear the existence check interval
+                if (studentExistenceCheckInterval) {
+                    clearInterval(studentExistenceCheckInterval);
+                    studentExistenceCheckInterval = null;
+                }
+
                 // Remove Firebase listener
                 if (studentDataListener && database) {
                     const studentRef = database.ref('students/' + studentId);
@@ -1674,6 +1684,32 @@
                     });
                 }
             }, 30000);
+        }
+
+        function startStudentExistenceCheck() {
+            // Check every 3 seconds if student data still exists
+            // This works reliably on mobile browsers even when Firebase listeners are throttled
+            studentExistenceCheckInterval = setInterval(() => {
+                if (studentId && database && currentRole === 'student' && studentDataInitialized) {
+                    const studentRef = database.ref('students/' + studentId);
+                    studentRef.once('value', (snapshot) => {
+                        if (!snapshot.exists()) {
+                            console.log("⚠️ Student data was removed (detected by polling) - logging out...");
+                            // Clear the interval first to prevent multiple triggers
+                            if (studentExistenceCheckInterval) {
+                                clearInterval(studentExistenceCheckInterval);
+                                studentExistenceCheckInterval = null;
+                            }
+                            showAlert('You have been logged out by the teacher. Please log in again to continue.', '🚪');
+                            setTimeout(() => {
+                                logout();
+                            }, 2000);
+                        }
+                    }).catch((error) => {
+                        console.error("Error checking student existence:", error);
+                    });
+                }
+            }, 3000); // Check every 3 seconds
         }
 
         function saveStudentProgress() {
