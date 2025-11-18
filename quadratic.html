@@ -1948,13 +1948,18 @@
         function loadGroupData() {
             if (!database) return;
 
+            console.log("🔍 Loading group data for student:", studentId);
+
             // First check if student has a group
             database.ref('students/' + studentId + '/groupId').once('value', (snapshot) => {
                 const groupId = snapshot.val();
                 currentGroupId = groupId;
 
+                console.log("👥 Student's groupId:", groupId);
+
                 if (!groupId) {
                     // No group assigned yet - use individual mode
+                    console.log("ℹ️ No group assigned - using individual mode");
                     document.getElementById('groupInfoBox').style.display = 'none';
                     progression.currentStage = 1;
                     progression.stageProgress = 0;
@@ -1971,7 +1976,21 @@
 
                 groupDataListener = groupRef.on('value', (groupSnapshot) => {
                     const groupData = groupSnapshot.val();
+                    console.log("📊 Group data loaded:", groupData);
+
                     if (groupData) {
+                        console.log("👥 Group members:", groupData.members);
+                        console.log("📈 Individual progress:", groupData.individualProgress);
+
+                        // Check if current student is actually in this group
+                        if (!groupData.members || !groupData.members.includes(studentId)) {
+                            console.error("❌ ERROR: Student is NOT in this group!");
+                            console.error("Student ID:", studentId);
+                            console.error("Group members:", groupData.members);
+                            showAlert('Error: You are assigned to a group you are not a member of. Please contact the teacher.', '⚠️');
+                            return;
+                        }
+
                         // Update progression from group data
                         progression.currentStage = groupData.currentStage || 1;
 
