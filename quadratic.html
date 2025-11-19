@@ -1979,6 +1979,7 @@
                     console.log("📊 Group data loaded:", groupData);
 
                     if (groupData) {
+                        console.log("🔔 Firebase listener triggered for", studentId);
                         console.log("👥 Group members:", groupData.members);
                         console.log("📈 Individual progress:", groupData.individualProgress);
 
@@ -1996,6 +1997,8 @@
                         const newStage = groupData.currentStage || 1;
                         const stageAdvanced = newStage > previousStage;
                         const stageDemoted = newStage < previousStage;
+
+                        console.log(`🎯 Stage check for ${studentId}: previous=${previousStage}, new=${newStage}, advanced=${stageAdvanced}, demoted=${stageDemoted}`);
 
                         // Update progression from group data
                         progression.currentStage = newStage;
@@ -2067,8 +2070,11 @@
 
                         // Show demotion modal if stage was demoted (detected by listener)
                         if (stageDemoted && previousStage > 0) {
+                            console.log(`😰😰😰 DEMOTION DETECTED by ${studentId}!`);
                             console.log(`😰 Stage demoted from ${previousStage} to ${newStage}!`);
+                            console.log(`😰 Showing demotion modal for student ${studentId}...`);
                             setTimeout(() => {
+                                console.log(`😰 Executing showCelebration(true) for ${studentId}`);
                                 showCelebration(true); // true = isDemotion
                                 // Re-enable submit button and hide waiting state
                                 document.getElementById('submitBtn').disabled = false;
@@ -2559,12 +2565,14 @@
         }
 
         function demoteGroup() {
-            if (!currentGroupId || !database) return;
+            if (!currentGroupId || !database) {
+                return Promise.resolve(); // Return resolved promise if no group
+            }
 
             console.log("📉 Demoting entire group...");
 
             // Demote the group stage and reset all progress
-            database.ref(`groups/${currentGroupId}`).transaction(gData => {
+            return database.ref(`groups/${currentGroupId}`).transaction(gData => {
                 if (gData && !gData.stageDemoting) {
                     if ((gData.currentStage || 1) > 1) {
                         gData.currentStage = (gData.currentStage || 1) - 1;
@@ -2575,11 +2583,12 @@
                                 gData.individualProgress[memberId] = 0;
                             });
                         }
+                        console.log(`✅ Group will be demoted to stage ${gData.currentStage}`);
                     }
                 }
                 return gData;
             }).then(() => {
-                console.log("✅ Group demoted successfully");
+                console.log("✅ Group demoted successfully in Firebase");
                 // Remove the stageDemoting flag after a delay
                 setTimeout(() => {
                     database.ref(`groups/${currentGroupId}/stageDemoting`).set(false);
@@ -2849,11 +2858,17 @@
                     }).then((result) => {
                         const finalProgress = result.snapshot.val();
                         console.log("📉 Student progress after wrong answer:", finalProgress);
+                        console.log("🎯 Current stage:", progression.currentStage);
 
                         // If progress went negative and stage > 1, demote entire group
                         if (finalProgress < 0 && progression.currentStage > 1) {
-                            console.log("⚠️ Triggering group demotion!");
-                            demoteGroup();
+                            console.log("⚠️ Triggering group demotion from stage", progression.currentStage);
+                            console.log("⚠️ Student", studentId, "triggered demotion!");
+
+                            // Demote the group - the Firebase listener will show modal for ALL teammates
+                            demoteGroup().then(() => {
+                                console.log("✅ Demotion complete! Firebase listener will show modal for all teammates.");
+                            });
                         }
                     });
                 } else {
