@@ -2566,12 +2566,11 @@
             content.classList.remove('demotion');
 
             if (isDemotion) {
-                // progression.currentStage is already the NEW (demoted) stage
-                const currentStageInfo = stages[progression.currentStage];
+                const prevStage = stages[progression.currentStage - 1];
                 content.classList.add('demotion');
                 document.getElementById('celebrationIcon').textContent = '😰';
                 document.getElementById('celebrationTitle').textContent = 'Stage Demotion!';
-                document.getElementById('celebrationMessage').textContent = `Don't worry! You're moving back to ${currentStageInfo.name}. Review the concepts and you'll master it!`;
+                document.getElementById('celebrationMessage').textContent = `Don't worry! You're moving back to ${prevStage.name}. Review the concepts and you'll master it!`;
                 btn.textContent = 'Continue';
                 btn.onclick = demoteStage;
             } else {
@@ -2993,6 +2992,10 @@
                             }).catch(error => {
                                 console.error("❌ demoteGroup() promise rejected:", error);
                             });
+                        } else if (finalProgress < 0 && progression.currentStage === 1) {
+                            // At Stage 1, can't demote further - set floor at 0
+                            console.log("🛑 At Stage 1, setting progress floor at 0");
+                            database.ref(`groups/${currentGroupId}/individualProgress/${studentId}`).set(0);
                         } else {
                             console.log("ℹ️ Demotion condition NOT met");
                         }
