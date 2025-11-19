@@ -1582,6 +1582,7 @@
         let studentExistenceCheckInterval = null;
         let currentGroupId = null;
         let groupDataListener = null;
+        let lastKnownGroupStage = null; // Track the last stage to detect changes
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -1982,6 +1983,7 @@
                         console.log("🔔 Firebase listener triggered for", studentId);
                         console.log("👥 Group members:", groupData.members);
                         console.log("📈 Individual progress:", groupData.individualProgress);
+                        console.log("🎯 Current group stage from Firebase:", groupData.currentStage);
 
                         // Check if current student is actually in this group
                         if (!groupData.members || !groupData.members.includes(studentId)) {
@@ -1993,15 +1995,21 @@
                         }
 
                         // Check if stage has changed (for celebration/demotion modals)
-                        const previousStage = progression.currentStage;
+                        const previousStage = lastKnownGroupStage; // Use separate tracking variable
                         const newStage = groupData.currentStage || 1;
-                        const stageAdvanced = newStage > previousStage;
-                        const stageDemoted = newStage < previousStage;
+                        const stageAdvanced = (previousStage !== null) && (newStage > previousStage);
+                        const stageDemoted = (previousStage !== null) && (newStage < previousStage);
 
-                        console.log(`🎯 Stage check for ${studentId}: previous=${previousStage}, new=${newStage}, advanced=${stageAdvanced}, demoted=${stageDemoted}`);
+                        console.log(`🎯 Stage check for ${studentId}:`);
+                        console.log(`   lastKnownGroupStage = ${lastKnownGroupStage}`);
+                        console.log(`   previousStage = ${previousStage}`);
+                        console.log(`   newStage = ${newStage}`);
+                        console.log(`   stageAdvanced = ${stageAdvanced}`);
+                        console.log(`   stageDemoted = ${stageDemoted}`);
 
                         // Update progression from group data
                         progression.currentStage = newStage;
+                        lastKnownGroupStage = newStage; // Update tracking variable
 
                         // Display group info
                         displayGroupInfo(groupData);
@@ -2058,7 +2066,8 @@
                         }
 
                         // Show celebration modal if stage just advanced (detected by listener)
-                        if (stageAdvanced && previousStage > 0) {
+                        if (stageAdvanced) {
+                            console.log(`🎊🎊🎊 ADVANCEMENT DETECTED by ${studentId}!`);
                             console.log(`🎊 Stage advanced from ${previousStage} to ${newStage}!`);
                             setTimeout(() => {
                                 showCelebration(false);
@@ -2069,17 +2078,19 @@
                         }
 
                         // Show demotion modal if stage was demoted (detected by listener)
-                        if (stageDemoted && previousStage > 0) {
+                        if (stageDemoted) {
                             console.log(`😰😰😰 DEMOTION DETECTED by ${studentId}!`);
                             console.log(`😰 Stage demoted from ${previousStage} to ${newStage}!`);
-                            console.log(`😰 Showing demotion modal for student ${studentId}...`);
+                            console.log(`😰 About to show demotion modal for student ${studentId}...`);
                             setTimeout(() => {
-                                console.log(`😰 Executing showCelebration(true) for ${studentId}`);
+                                console.log(`😰 NOW CALLING showCelebration(true) for ${studentId}`);
                                 showCelebration(true); // true = isDemotion
                                 // Re-enable submit button and hide waiting state
                                 document.getElementById('submitBtn').disabled = false;
                                 document.getElementById('waitingState').style.display = 'none';
                             }, 500);
+                        } else {
+                            console.log(`ℹ️ No stage change detected (stageDemoted=${stageDemoted}, stageAdvanced=${stageAdvanced})`);
                         }
 
                         updateStageUI();
