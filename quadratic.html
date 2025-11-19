@@ -2566,11 +2566,12 @@
             content.classList.remove('demotion');
 
             if (isDemotion) {
-                const prevStage = stages[progression.currentStage - 1];
+                // progression.currentStage is already the NEW (demoted) stage
+                const currentStageInfo = stages[progression.currentStage];
                 content.classList.add('demotion');
                 document.getElementById('celebrationIcon').textContent = '😰';
                 document.getElementById('celebrationTitle').textContent = 'Stage Demotion!';
-                document.getElementById('celebrationMessage').textContent = `Don't worry! You're moving back to ${prevStage.name}. Review the concepts and you'll master it!`;
+                document.getElementById('celebrationMessage').textContent = `Don't worry! You're moving back to ${currentStageInfo.name}. Review the concepts and you'll master it!`;
                 btn.textContent = 'Continue';
                 btn.onclick = demoteStage;
             } else {
