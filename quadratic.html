@@ -584,6 +584,7 @@
             padding: 2rem;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             animation: fadeIn 0.6s ease-out;
+            position: relative;
         }
 
         .card h2 {
@@ -1209,6 +1210,43 @@
             color: var(--text-secondary);
         }
 
+        .question-disabled-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .question-disabled-overlay .overlay-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        .question-disabled-overlay .overlay-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-yellow);
+            margin-bottom: 0.75rem;
+        }
+
+        .question-disabled-overlay .overlay-message {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
         .group-info-box {
             background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
             border: 2px solid var(--accent-purple);
@@ -1450,8 +1488,19 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" id="questionCard">
                 <h2>❓ Identify the Signs</h2>
+
+                <!-- Waiting Overlay (shown when student completes 5/5 in group mode) -->
+                <div class="question-disabled-overlay" id="questionDisabledOverlay" style="display: none;">
+                    <div class="overlay-icon">⏳</div>
+                    <div class="overlay-title">Great Job! You're Done! 🎉</div>
+                    <div class="overlay-message">
+                        You've completed your 5 correct answers!<br>
+                        <strong>Now help your teammates understand the concepts.</strong><br>
+                        You'll advance to the next stage together when everyone completes their 5 questions!
+                    </div>
+                </div>
 
                 <div class="coefficient-question" id="questionA">
                     <label class="coeff-label">Sign of a:</label>
@@ -1672,7 +1721,7 @@
                     "<strong>a:</strong> Opens upward (+) or downward (−)",
                     "<strong>b:</strong> If vertex 🟣 on right & opens up, b is negative",
                     "<strong>b:</strong> If vertex 🟣 on left & opens up, b is positive",
-                    "<strong>c:</strong> Y-intercept 🟠 position",
+                    "<strong>c:</strong> Y-intercept ���� position",
                     "<strong>Δ:</strong> Number of red dots 🔴",
                     "<strong>Axis:</strong> Vertex 🟣 horizontal position"
                 ]
@@ -2038,11 +2087,15 @@
                         progression.stageTarget = groupData.members.length * 5; // All members need 5 each
 
                         if (myProgress >= 5 && !allComplete) {
-                            // Show waiting state
+                            // Show waiting state at top
                             document.getElementById('waitingState').style.display = 'block';
+                            // Show overlay on question area (more visible!)
+                            document.getElementById('questionDisabledOverlay').style.display = 'flex';
+                            // Disable submit button
                             document.getElementById('submitBtn').disabled = true;
                         } else {
                             document.getElementById('waitingState').style.display = 'none';
+                            document.getElementById('questionDisabledOverlay').style.display = 'none';
                         }
 
                         // If all members complete, auto-advance stage
@@ -2079,9 +2132,10 @@
                             console.log(`🎊 Stage advanced from ${previousStage} to ${newStage}!`);
                             setTimeout(() => {
                                 showCelebration(false);
-                                // Re-enable submit button and hide waiting state
+                                // Re-enable submit button and hide waiting state/overlay
                                 document.getElementById('submitBtn').disabled = false;
                                 document.getElementById('waitingState').style.display = 'none';
+                                document.getElementById('questionDisabledOverlay').style.display = 'none';
                             }, 500);
                         }
 
@@ -2093,9 +2147,10 @@
                             setTimeout(() => {
                                 console.log(`😰 NOW CALLING showCelebration(true) for ${studentId}`);
                                 showCelebration(true); // true = isDemotion
-                                // Re-enable submit button and hide waiting state
+                                // Re-enable submit button and hide waiting state/overlay
                                 document.getElementById('submitBtn').disabled = false;
                                 document.getElementById('waitingState').style.display = 'none';
+                                document.getElementById('questionDisabledOverlay').style.display = 'none';
                             }, 500);
                         } else {
                             console.log(`ℹ️ No stage change detected (stageDemoted=${stageDemoted}, stageAdvanced=${stageAdvanced})`);
