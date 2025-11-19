@@ -1991,8 +1991,13 @@
                             return;
                         }
 
+                        // Check if stage has advanced (for celebration modal)
+                        const previousStage = progression.currentStage;
+                        const newStage = groupData.currentStage || 1;
+                        const stageAdvanced = newStage > previousStage;
+
                         // Update progression from group data
-                        progression.currentStage = groupData.currentStage || 1;
+                        progression.currentStage = newStage;
 
                         // Display group info
                         displayGroupInfo(groupData);
@@ -2020,18 +2025,16 @@
                             document.getElementById('waitingState').style.display = 'none';
                         }
 
-                        // If all members complete, auto-advance stage and show celebration
-                        if (allComplete && !groupData.stageCompleting) {
-                            // Mark that stage is advancing to prevent duplicate triggers
-                            database.ref(`groups/${currentGroupId}/stageCompleting`).set(true);
+                        // If all members complete, auto-advance stage
+                        if (allComplete && !groupData.stageCompleting && !groupData.stageAdvanced) {
+                            console.log("🎉 All members complete! Auto-advancing stage...");
 
                             // Auto-advance to next stage
-                            if (progression.currentStage < 5) {
+                            if (newStage < 5) {
                                 database.ref(`groups/${currentGroupId}`).transaction(gData => {
                                     if (gData && !gData.stageAdvanced) {
                                         gData.currentStage = (gData.currentStage || 1) + 1;
                                         gData.stageAdvanced = true;
-                                        gData.stageCompleting = false;
                                         // Reset all individual progress
                                         if (gData.members) {
                                             gData.members.forEach(memberId => {
@@ -2041,18 +2044,24 @@
                                     }
                                     return gData;
                                 }).then(() => {
+                                    console.log("✅ Stage advanced successfully");
                                     // Remove the stageAdvanced flag after a delay
                                     setTimeout(() => {
                                         database.ref(`groups/${currentGroupId}/stageAdvanced`).set(false);
-                                    }, 2000);
-
-                                    // Show celebration
-                                    setTimeout(() => showCelebration(false), 500);
+                                    }, 3000);
                                 });
-                            } else {
-                                // Final stage complete
-                                setTimeout(() => showCelebration(false), 500);
                             }
+                        }
+
+                        // Show celebration modal if stage just advanced (detected by listener)
+                        if (stageAdvanced && previousStage > 0) {
+                            console.log(`🎊 Stage advanced from ${previousStage} to ${newStage}!`);
+                            setTimeout(() => {
+                                showCelebration(false);
+                                // Re-enable submit button and hide waiting state
+                                document.getElementById('submitBtn').disabled = false;
+                                document.getElementById('waitingState').style.display = 'none';
+                            }, 500);
                         }
 
                         updateStageUI();
