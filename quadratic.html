@@ -1991,10 +1991,11 @@
                             return;
                         }
 
-                        // Check if stage has advanced (for celebration modal)
+                        // Check if stage has changed (for celebration/demotion modals)
                         const previousStage = progression.currentStage;
                         const newStage = groupData.currentStage || 1;
                         const stageAdvanced = newStage > previousStage;
+                        const stageDemoted = newStage < previousStage;
 
                         // Update progression from group data
                         progression.currentStage = newStage;
@@ -2058,6 +2059,17 @@
                             console.log(`🎊 Stage advanced from ${previousStage} to ${newStage}!`);
                             setTimeout(() => {
                                 showCelebration(false);
+                                // Re-enable submit button and hide waiting state
+                                document.getElementById('submitBtn').disabled = false;
+                                document.getElementById('waitingState').style.display = 'none';
+                            }, 500);
+                        }
+
+                        // Show demotion modal if stage was demoted (detected by listener)
+                        if (stageDemoted && previousStage > 0) {
+                            console.log(`😰 Stage demoted from ${previousStage} to ${newStage}!`);
+                            setTimeout(() => {
+                                showCelebration(true); // true = isDemotion
                                 // Re-enable submit button and hide waiting state
                                 document.getElementById('submitBtn').disabled = false;
                                 document.getElementById('waitingState').style.display = 'none';
@@ -2546,24 +2558,59 @@
             }
         }
 
+        function demoteGroup() {
+            if (!currentGroupId || !database) return;
+
+            console.log("📉 Demoting entire group...");
+
+            // Demote the group stage and reset all progress
+            database.ref(`groups/${currentGroupId}`).transaction(gData => {
+                if (gData && !gData.stageDemoting) {
+                    if ((gData.currentStage || 1) > 1) {
+                        gData.currentStage = (gData.currentStage || 1) - 1;
+                        gData.stageDemoting = true;
+                        // Reset all individual progress to 0
+                        if (gData.members) {
+                            gData.members.forEach(memberId => {
+                                gData.individualProgress[memberId] = 0;
+                            });
+                        }
+                    }
+                }
+                return gData;
+            }).then(() => {
+                console.log("✅ Group demoted successfully");
+                // Remove the stageDemoting flag after a delay
+                setTimeout(() => {
+                    database.ref(`groups/${currentGroupId}/stageDemoting`).set(false);
+                }, 3000);
+            });
+        }
+
         function demoteStage() {
             document.getElementById('celebrationModal').classList.remove('show');
 
-            if (progression.currentStage > 1) {
-                progression.currentStage--;
-                progression.stageProgress = 0;
-                const index = progression.completedStages.indexOf(progression.currentStage);
-                if (index > -1) {
-                    progression.completedStages.splice(index, 1);
-                }
-                updateStageUI();
-                saveStudentProgress();
+            if (currentGroupId && database) {
+                // Group mode - demotion already happened automatically, just close modal
                 generateNewQuestion();
             } else {
-                progression.stageProgress = 0;
-                updateStageUI();
-                saveStudentProgress();
-                generateNewQuestion();
+                // No group - use old system
+                if (progression.currentStage > 1) {
+                    progression.currentStage--;
+                    progression.stageProgress = 0;
+                    const index = progression.completedStages.indexOf(progression.currentStage);
+                    if (index > -1) {
+                        progression.completedStages.splice(index, 1);
+                    }
+                    updateStageUI();
+                    saveStudentProgress();
+                    generateNewQuestion();
+                } else {
+                    progression.stageProgress = 0;
+                    updateStageUI();
+                    saveStudentProgress();
+                    generateNewQuestion();
+                }
             }
         }
 
@@ -2798,10 +2845,16 @@
                 if (currentGroupId && database) {
                     database.ref(`groups/${currentGroupId}/individualProgress/${studentId}`).transaction(currentProgress => {
                         const newProgress = (currentProgress || 0) - 1;
-                        if (newProgress < 0 && progression.currentStage > 1) {
-                            checkForDemotion = true;
+                        return newProgress; // Allow negative to trigger demotion
+                    }).then((result) => {
+                        const finalProgress = result.snapshot.val();
+                        console.log("📉 Student progress after wrong answer:", finalProgress);
+
+                        // If progress went negative and stage > 1, demote entire group
+                        if (finalProgress < 0 && progression.currentStage > 1) {
+                            console.log("⚠️ Triggering group demotion!");
+                            demoteGroup();
                         }
-                        return Math.max(0, newProgress);
                     });
                 } else {
                     progression.stageProgress--;
