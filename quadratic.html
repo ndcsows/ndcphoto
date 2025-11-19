@@ -1752,6 +1752,7 @@
             currentRole = 'student';
             studentId = name.toLowerCase().replace(/\s+/g, '_');
             studentDataInitialized = false;
+            lastKnownGroupStage = null; // Reset stage tracking on login
 
             console.log("📝 Student logging in:", name, "ID:", studentId);
 
@@ -1994,13 +1995,18 @@
                             return;
                         }
 
-                        // Check if stage has changed (for celebration/demotion modals)
-                        const previousStage = lastKnownGroupStage; // Use separate tracking variable
+                        // Get current stage from Firebase
                         const newStage = groupData.currentStage || 1;
-                        const stageAdvanced = (previousStage !== null) && (newStage > previousStage);
-                        const stageDemoted = (previousStage !== null) && (newStage < previousStage);
+
+                        // Check if stage has changed (for celebration/demotion modals)
+                        // Only check if this is NOT the first load (lastKnownGroupStage is already set)
+                        const isFirstLoad = (lastKnownGroupStage === null);
+                        const previousStage = lastKnownGroupStage;
+                        const stageAdvanced = (!isFirstLoad) && (newStage > previousStage);
+                        const stageDemoted = (!isFirstLoad) && (newStage < previousStage);
 
                         console.log(`🎯 Stage check for ${studentId}:`);
+                        console.log(`   isFirstLoad = ${isFirstLoad}`);
                         console.log(`   lastKnownGroupStage = ${lastKnownGroupStage}`);
                         console.log(`   previousStage = ${previousStage}`);
                         console.log(`   newStage = ${newStage}`);
@@ -2009,7 +2015,9 @@
 
                         // Update progression from group data
                         progression.currentStage = newStage;
-                        lastKnownGroupStage = newStage; // Update tracking variable
+
+                        // Update tracking variable AFTER checking for changes
+                        lastKnownGroupStage = newStage;
 
                         // Display group info
                         displayGroupInfo(groupData);
@@ -2294,6 +2302,9 @@
                             <div class="group-header">
                                 <span>${stageInfo.icon}</span>
                                 <span>Group ${group.number}</span>
+                            </div>
+                            <div style="text-align: center; padding: 0.5rem 0; font-size: 0.875rem; color: var(--accent-purple); font-weight: 600;">
+                                Stage ${group.currentStage}: ${stageInfo.name}
                             </div>
                             <ul class="group-members">
                     `;
