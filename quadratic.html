@@ -1279,6 +1279,92 @@
             border-radius: 6px;
         }
 
+        /* Group Progress Chart Styles */
+        .group-chart {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border: 2px solid var(--accent-blue);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .chart-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chart-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chart-label {
+            min-width: 100px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .chart-bar-container {
+            flex: 1;
+            height: 40px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .chart-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink));
+            border-radius: 8px;
+            transition: width 0.5s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 0.75rem;
+            font-weight: 700;
+            color: white;
+            font-size: 0.9rem;
+            min-width: 60px;
+        }
+
+        .chart-stage-indicator {
+            min-width: 120px;
+            text-align: right;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .chart-stage-icon {
+            font-size: 1.5rem;
+            margin-right: 0.25rem;
+        }
+
         .member-name {
             font-weight: 600;
         }
@@ -1346,8 +1432,18 @@
         <div class="groups-section">
             <div class="groups-header">
                 <h2 class="groups-title">👥 Student Groups</h2>
-                <button class="assign-btn" onclick="autoAssignGroups()">🎲 Auto-Assign Groups</button>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button class="assign-btn" onclick="toggleGroupChart()" id="chartToggleBtn">📊 Show Progress Chart</button>
+                    <button class="assign-btn" onclick="autoAssignGroups()">🎲 Auto-Assign Groups</button>
+                </div>
             </div>
+
+            <!-- Progress Chart (hidden by default) -->
+            <div id="groupProgressChart" class="group-chart" style="display: none;">
+                <h3 class="chart-title">📊 Group Progress Overview</h3>
+                <div id="chartBars" class="chart-bars"></div>
+            </div>
+
             <div id="groupsContainer" class="groups-grid"></div>
             <div id="noGroupsMessage" class="empty-state" style="padding: 2rem;">
                 <p style="color: var(--text-secondary);">No groups assigned yet. Click "Auto-Assign Groups" to create groups automatically (2 students per group, or 3 if odd number).</p>
@@ -1721,7 +1817,7 @@
                     "<strong>a:</strong> Opens upward (+) or downward (−)",
                     "<strong>b:</strong> If vertex 🟣 on right & opens up, b is negative",
                     "<strong>b:</strong> If vertex 🟣 on left & opens up, b is positive",
-                    "<strong>c:</strong> Y-intercept ���� position",
+                    "<strong>c:</strong> Y-intercept 🟠 position",
                     "<strong>Δ:</strong> Number of red dots 🔴",
                     "<strong>Axis:</strong> Vertex 🟣 horizontal position"
                 ]
@@ -2331,6 +2427,65 @@
                 const groups = snapshot.val();
                 console.log("📊 Groups data received:", groups);
                 updateGroupsDisplay(groups);
+                updateGroupChart(groups); // Update chart whenever groups change
+            });
+        }
+
+        function toggleGroupChart() {
+            const chart = document.getElementById('groupProgressChart');
+            const btn = document.getElementById('chartToggleBtn');
+
+            if (chart.style.display === 'none') {
+                chart.style.display = 'block';
+                btn.textContent = '📊 Hide Progress Chart';
+            } else {
+                chart.style.display = 'none';
+                btn.textContent = '📊 Show Progress Chart';
+            }
+        }
+
+        function updateGroupChart(groups) {
+            const chartBars = document.getElementById('chartBars');
+
+            if (!groups || Object.keys(groups).length === 0) {
+                chartBars.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No groups to display</p>';
+                return;
+            }
+
+            // Get student names first
+            database.ref('students').once('value', (snapshot) => {
+                const students = snapshot.val() || {};
+
+                let html = '';
+                Object.keys(groups).forEach(groupId => {
+                    const group = groups[groupId];
+                    const stageInfo = stages[group.currentStage] || stages[1];
+                    const percentage = (group.currentStage / 5) * 100; // 5 stages total
+
+                    // Get member names
+                    const memberNames = group.members.map(memberId =>
+                        students[memberId]?.name || memberId
+                    ).join(' & ');
+
+                    html += `
+                        <div class="chart-bar-row">
+                            <div class="chart-label" style="min-width: 150px;">
+                                ${stageInfo.icon} ${memberNames}
+                            </div>
+                            <div class="chart-bar-container">
+                                <div class="chart-bar-fill" style="width: ${percentage}%">
+                                    Stage ${group.currentStage}
+                                </div>
+                            </div>
+                            <div class="chart-stage-indicator">
+                                <span class="chart-stage-icon">${stageInfo.icon}</span>
+                                ${stageInfo.name}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                chartBars.innerHTML = html;
             });
         }
 
