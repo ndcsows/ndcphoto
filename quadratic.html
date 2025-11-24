@@ -1225,29 +1225,41 @@
         }
 
         .waiting-state {
-            background: var(--bg-card);
-            border: 2px solid var(--accent-yellow);
-            border-radius: 12px;
-            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(251, 146, 60, 0.2));
+            border: 3px solid var(--accent-yellow);
+            border-radius: 16px;
+            padding: 2rem;
             margin: 1.5rem 0;
             text-align: center;
             animation: pulse 2s infinite;
+            box-shadow: 0 0 30px rgba(234, 179, 8, 0.3);
         }
 
         .waiting-state-icon {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
+            font-size: 4rem;
+            margin-bottom: 0.75rem;
+            filter: drop-shadow(0 0 10px rgba(234, 179, 8, 0.5));
         }
 
         .waiting-state-title {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: var(--accent-yellow);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            text-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
         }
 
         .waiting-state-message {
-            color: var(--text-secondary);
+            color: #fbbf24;
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.6;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .waiting-state-message strong {
+            color: #fef3c7;
+            font-weight: 700;
         }
 
         .question-disabled-overlay {
@@ -1553,10 +1565,11 @@
         <!-- Waiting State -->
         <div class="waiting-state" id="waitingState" style="display: none;">
             <div class="waiting-state-icon">⏳</div>
-            <div class="waiting-state-title">Great Job! Now Help Your Teammate!</div>
+            <div class="waiting-state-title">🎉 Great Job! Now Help Your Teammate! 🎉</div>
             <div class="waiting-state-message">
-                You've completed your 5 correct answers! 🎉<br>
-                Help your group members understand the concepts so you can advance together!
+                <strong>You've completed your 5 correct answers!</strong><br>
+                Now help your group members understand the concepts<br>
+                so you can advance together! 💪
             </div>
         </div>
 
@@ -1682,7 +1695,7 @@
                     <div class="options">
                         <button class="option-btn" data-coeff="delta" data-value="+">Positive (+)</button>
                         <button class="option-btn" data-coeff="delta" data-value="0">Zero (0)</button>
-                        <button class="option-btn" data-coeff="delta" data-value="-">Negative (���)</button>
+                        <button class="option-btn" data-coeff="delta" data-value="-">Negative (−)</button>
                     </div>
                 </div>
 
@@ -2840,7 +2853,7 @@
                 btn.onclick = demoteStage;
             } else {
                 const stage = stages[progression.currentStage];
-                const icons = ['🎉', '🎊', '✨', '🌟', '💫', '🎈'];
+                const icons = ['����', '🎊', '✨', '🌟', '💫', '🎈'];
                 const messages = [
                     "Amazing work! Ready for the next challenge?",
                     "You're getting better and better!",
@@ -2850,7 +2863,7 @@
                 ];
 
                 if (progression.currentStage === 5) {
-                    document.getElementById('celebrationIcon').textContent = '����';
+                    document.getElementById('celebrationIcon').textContent = '🏆';
                     document.getElementById('celebrationTitle').textContent = 'You\'re a Master!';
                     document.getElementById('celebrationMessage').textContent = 'Congratulations! You\'ve mastered all stages of parabola analysis!';
                     btn.textContent = 'Continue Learning';
