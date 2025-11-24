@@ -11,6 +11,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         :root {
@@ -85,6 +86,45 @@
             width: 100%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
             animation: fadeIn 0.6s ease-out;
+        }
+
+        .qr-code-container {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .qr-code-box {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.8s ease-out 0.2s backwards;
+        }
+
+        .qr-toggle-btn {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .qr-toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .qr-toggle-btn:active {
+            transform: translateY(0);
         }
 
         .login-title {
@@ -1383,6 +1423,10 @@
             <h1 class="login-title">🎯 Parabola Trainer</h1>
             <p class="login-subtitle">Choose your role to begin</p>
 
+            <button class="qr-toggle-btn" onclick="toggleQRCode()" id="qrToggleBtn">
+                📱 Show QR Code
+            </button>
+
             <div class="login-tabs">
                 <div class="login-tab active" onclick="switchTab('student')">
                     👨‍🎓 Student
@@ -1414,6 +1458,15 @@
                 <div class="info-box">
                     <strong>👩‍🏫 Teachers:</strong> Enter your teacher password to access the dashboard and monitor student progress in real-time.
                 </div>
+            </div>
+        </div>
+
+        <!-- QR Code Section (hidden by default) -->
+        <div class="qr-code-container" id="qrCodeContainer" style="display: none;">
+            <div class="qr-code-box">
+                <h3 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 1rem;">📱 Scan to Join</h3>
+                <div id="qrcode" style="background: white; padding: 0.75rem; border-radius: 8px; display: inline-block;"></div>
+                <p style="margin-top: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">Scan this QR code with your mobile device</p>
             </div>
         </div>
     </div>
@@ -2821,7 +2874,7 @@
                 console.log("🚫 stageDemoting flag:", gData.stageDemoting);
 
                 if (gData.stageDemoting) {
-                    console.warn("⚠️ Demotion already in progress, skipping");
+                    console.warn("⚠��� Demotion already in progress, skipping");
                     return gData; // Abort - already demoting
                 }
 
@@ -3247,6 +3300,42 @@
             const accuracy = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
             document.getElementById('accuracy').textContent = accuracy + '%';
         }
+
+        // Toggle QR code visibility
+        function toggleQRCode() {
+            const container = document.getElementById('qrCodeContainer');
+            const btn = document.getElementById('qrToggleBtn');
+
+            if (container.style.display === 'none') {
+                container.style.display = 'flex';
+                btn.textContent = '📱 Hide QR Code';
+            } else {
+                container.style.display = 'none';
+                btn.textContent = '📱 Show QR Code';
+            }
+        }
+
+        // Generate QR code with current URL when page loads
+        window.addEventListener('load', function() {
+            const currentUrl = window.location.href;
+            const qrcodeElement = document.getElementById('qrcode');
+
+            // Clear any existing QR code
+            qrcodeElement.innerHTML = '';
+
+            // Generate new QR code
+             
+            new QRCode(qrcodeElement, {
+                text: currentUrl,
+                width: 180,
+                height: 180,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            console.log("📱 QR code generated for URL:", currentUrl);
+        });
     </script>
 </body>
 </html>
