@@ -1567,7 +1567,7 @@
                     <span id="stageIcon">🌱</span>
                     <span id="stageName">Stage 1: Beginner</span>
                 </div>
-                <div class="stage-badge" id="stageBadge">Level 1/5</div>
+                <div class="stage-badge" id="stageBadge">Level 1/7</div>
             </div>
             <div class="stage-description" id="stageDescription">
                 Learn to identify the sign of coefficient 'a' - Does the parabola open upward or downward?
@@ -1603,6 +1603,14 @@
                 <div class="mini-badge" id="badge5">
                     <div class="mini-badge-icon">🏆</div>
                     <div>Stage 5</div>
+                </div>
+                <div class="mini-badge" id="badge6">
+                    <div class="mini-badge-icon">📍</div>
+                    <div>Stage 6</div>
+                </div>
+                <div class="mini-badge" id="badge7">
+                    <div class="mini-badge-icon">🎯</div>
+                    <div>Stage 7</div>
                 </div>
             </div>
         </div>
@@ -1674,7 +1682,7 @@
                     <div class="options">
                         <button class="option-btn" data-coeff="delta" data-value="+">Positive (+)</button>
                         <button class="option-btn" data-coeff="delta" data-value="0">Zero (0)</button>
-                        <button class="option-btn" data-coeff="delta" data-value="-">Negative (−)</button>
+                        <button class="option-btn" data-coeff="delta" data-value="-">Negative (���)</button>
                     </div>
                 </div>
 
@@ -1693,6 +1701,24 @@
                         <button class="option-btn" data-coeff="b" data-value="+">Positive (+)</button>
                         <button class="option-btn" data-coeff="b" data-value="0">Zero (0)</button>
                         <button class="option-btn" data-coeff="b" data-value="-">Negative (−)</button>
+                    </div>
+                </div>
+
+                <div class="coefficient-question hidden" id="questionVertexX" style="border: 2px solid var(--accent-pink); background: rgba(236, 72, 153, 0.1);">
+                    <label class="coeff-label" style="color: var(--accent-pink);">Sign of Vertex x-coordinate:</label>
+                    <div class="options">
+                        <button class="option-btn" data-coeff="vertex-x" data-value="+">Positive (+)</button>
+                        <button class="option-btn" data-coeff="vertex-x" data-value="0">Zero (0)</button>
+                        <button class="option-btn" data-coeff="vertex-x" data-value="-">Negative (−)</button>
+                    </div>
+                </div>
+
+                <div class="coefficient-question hidden" id="questionVertexY" style="border: 2px solid var(--accent-green); background: rgba(16, 185, 129, 0.1);">
+                    <label class="coeff-label" style="color: var(--accent-green);">Sign of Vertex y-coordinate:</label>
+                    <div class="options">
+                        <button class="option-btn" data-coeff="vertex-y" data-value="+">Positive (+)</button>
+                        <button class="option-btn" data-coeff="vertex-y" data-value="0">Zero (0)</button>
+                        <button class="option-btn" data-coeff="vertex-y" data-value="-">Negative (−)</button>
                     </div>
                 </div>
 
@@ -1873,6 +1899,35 @@
                     "<strong>c:</strong> Y-intercept 🟠 position",
                     "<strong>Δ:</strong> Number of red dots 🔴",
                     "<strong>Axis:</strong> Vertex 🟣 horizontal position"
+                ]
+            },
+            6: {
+                name: "Stage 6: Vertex X-Master",
+                icon: "📍",
+                description: "Find the x-coordinate of the vertex - Where is the turning point horizontally?",
+                tests: ['a', 'c', 'delta', 'axis', 'vertex-x'],
+                hints: [
+                    "<strong>Vertex x-coordinate:</strong> Look at the purple vertex 🟣",
+                    "<strong>x > 0:</strong> Vertex is on the right side of y-axis",
+                    "<strong>x = 0:</strong> Vertex is on the y-axis",
+                    "<strong>x < 0:</strong> Vertex is on the left side of y-axis",
+                    "<strong>Axis of symmetry:</strong> Same as vertex x-coordinate!",
+                    "The vertex x-coordinate is calculated as: -b/(2a)"
+                ]
+            },
+            7: {
+                name: "Stage 7: Vertex Y-Champion",
+                icon: "🎯",
+                description: "Find the y-coordinate of the vertex - Where is the turning point vertically?",
+                tests: ['a', 'c', 'delta', 'axis', 'vertex-x', 'vertex-y'],
+                hints: [
+                    "<strong>Vertex y-coordinate:</strong> Look at the purple vertex 🟣 height",
+                    "<strong>y > 0:</strong> Vertex is above the x-axis",
+                    "<strong>y = 0:</strong> Vertex is on the x-axis",
+                    "<strong>y < 0:</strong> Vertex is below the x-axis",
+                    "<strong>Tip:</strong> Substitute x-coordinate back into y = ax² + bx + c",
+                    "If parabola opens up, vertex is the minimum point",
+                    "If parabola opens down, vertex is the maximum point"
                 ]
             }
         };
@@ -2255,7 +2310,7 @@
                             console.log("🎉 All members complete! Auto-advancing stage...");
 
                             // Auto-advance to next stage
-                            if (newStage < 5) {
+                            if (newStage < 7) {
                                 database.ref(`groups/${currentGroupId}`).transaction(gData => {
                                     if (gData && !gData.stageAdvanced) {
                                         gData.currentStage = (gData.currentStage || 1) + 1;
@@ -2513,7 +2568,7 @@
                 Object.keys(groups).forEach(groupId => {
                     const group = groups[groupId];
                     const stageInfo = stages[group.currentStage] || stages[1];
-                    const percentage = (group.currentStage / 5) * 100; // 5 stages total
+                    const percentage = (group.currentStage / 7) * 100; // 7 stages total
 
                     // Get member names
                     const memberNames = group.members.map(memberId =>
@@ -2719,7 +2774,7 @@
             const stage = stages[progression.currentStage];
             document.getElementById('stageName').textContent = stage.name;
             document.getElementById('stageIcon').textContent = stage.icon;
-            document.getElementById('stageBadge').textContent = `Level ${progression.currentStage}/5`;
+            document.getElementById('stageBadge').textContent = `Level ${progression.currentStage}/7`;
             document.getElementById('stageDescription').textContent = stage.description;
 
             // Update hints
@@ -2733,6 +2788,8 @@
             document.getElementById('questionDelta').classList.toggle('hidden', !stage.tests.includes('delta'));
             document.getElementById('questionAxis').classList.toggle('hidden', !stage.tests.includes('axis'));
             document.getElementById('questionB').classList.toggle('hidden', !stage.tests.includes('b'));
+            document.getElementById('questionVertexX').classList.toggle('hidden', !stage.tests.includes('vertex-x'));
+            document.getElementById('questionVertexY').classList.toggle('hidden', !stage.tests.includes('vertex-y'));
 
             // Update badge indicators
             for (let i = 1; i <= 5; i++) {
@@ -2793,7 +2850,7 @@
                 ];
 
                 if (progression.currentStage === 5) {
-                    document.getElementById('celebrationIcon').textContent = '🏆';
+                    document.getElementById('celebrationIcon').textContent = '����';
                     document.getElementById('celebrationTitle').textContent = 'You\'re a Master!';
                     document.getElementById('celebrationMessage').textContent = 'Congratulations! You\'ve mastered all stages of parabola analysis!';
                     btn.textContent = 'Continue Learning';
@@ -2837,7 +2894,7 @@
                 generateNewQuestion();
             } else {
                 // No group - use old system
-                if (progression.currentStage < 5) {
+                if (progression.currentStage < 7) {
                     progression.currentStage++;
                     progression.stageProgress = 0;
                     progression.completedStages.push(progression.currentStage - 1);
@@ -2874,7 +2931,7 @@
                 console.log("🚫 stageDemoting flag:", gData.stageDemoting);
 
                 if (gData.stageDemoting) {
-                    console.warn("⚠��� Demotion already in progress, skipping");
+                    console.warn("⚠️ Demotion already in progress, skipping");
                     return gData; // Abort - already demoting
                 }
 
@@ -3140,6 +3197,12 @@
             const axisOfSymmetry = -currentQuestion.b / (2 * currentQuestion.a);
             const correctAxis = getSign(axisOfSymmetry);
 
+            // Calculate vertex coordinates
+            const vertexX = axisOfSymmetry;
+            const correctVertexX = getSign(vertexX);
+            const vertexY = currentQuestion.a * vertexX * vertexX + currentQuestion.b * vertexX + currentQuestion.c;
+            const correctVertexY = getSign(vertexY);
+
             let isCorrect = true;
             stage.tests.forEach(test => {
                 let correct;
@@ -3148,6 +3211,8 @@
                 else if (test === 'c') correct = correctC;
                 else if (test === 'delta') correct = correctDelta;
                 else if (test === 'axis') correct = correctAxis;
+                else if (test === 'vertex-x') correct = correctVertexX;
+                else if (test === 'vertex-y') correct = correctVertexY;
 
                 if (userAnswers[test] !== correct) {
                     isCorrect = false;
@@ -3231,7 +3296,10 @@
                 const correct = coeff === 'a' ? correctA :
                                coeff === 'b' ? correctB :
                                coeff === 'c' ? correctC :
-                               coeff === 'delta' ? correctDelta : correctAxis;
+                               coeff === 'delta' ? correctDelta :
+                               coeff === 'axis' ? correctAxis :
+                               coeff === 'vertex-x' ? correctVertexX :
+                               coeff === 'vertex-y' ? correctVertexY : correctAxis;
                 document.querySelectorAll(`[data-coeff="${coeff}"]`).forEach(btn => {
                     btn.disabled = true;
                     if (btn.dataset.value === correct) {
@@ -3263,9 +3331,9 @@
 
                 feedback.innerHTML = details;
 
-                if (progression.stageProgress >= progression.stageTarget && progression.currentStage < 5) {
+                if (progression.stageProgress >= progression.stageTarget && progression.currentStage < 7) {
                     setTimeout(() => showCelebration(false), 1000);
-                } else if (progression.stageProgress >= progression.stageTarget && progression.currentStage === 5) {
+                } else if (progression.stageProgress >= progression.stageTarget && progression.currentStage === 7) {
                     setTimeout(() => showCelebration(false), 1000);
                 }
             } else {
