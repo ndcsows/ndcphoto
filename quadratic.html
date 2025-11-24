@@ -1268,8 +1268,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(4px);
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.95), rgba(251, 146, 60, 0.95));
+            backdrop-filter: blur(8px);
             border-radius: 16px;
             display: flex;
             flex-direction: column;
@@ -1278,25 +1278,40 @@
             z-index: 10;
             padding: 2rem;
             text-align: center;
-        }
-
-        .question-disabled-overlay .overlay-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
+            border: 4px solid #fbbf24;
+            box-shadow: 0 0 40px rgba(234, 179, 8, 0.6), inset 0 0 60px rgba(255, 255, 255, 0.1);
             animation: pulse 2s infinite;
         }
 
+        .question-disabled-overlay .overlay-icon {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            animation: pulse 2s infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
+        }
+
         .question-disabled-overlay .overlay-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--accent-yellow);
-            margin-bottom: 0.75rem;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.5);
+            letter-spacing: 0.5px;
         }
 
         .question-disabled-overlay .overlay-message {
-            font-size: 1rem;
-            color: var(--text-secondary);
-            line-height: 1.6;
+            font-size: 1.3rem;
+            color: #ffffff;
+            line-height: 1.8;
+            font-weight: 700;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.8);
+        }
+
+        .question-disabled-overlay .overlay-message strong {
+            font-size: 1.4rem;
+            color: #fef3c7;
+            font-weight: 900;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
         }
 
         .group-info-box {
@@ -2853,7 +2868,7 @@
                 btn.onclick = demoteStage;
             } else {
                 const stage = stages[progression.currentStage];
-                const icons = ['����', '🎊', '✨', '🌟', '💫', '🎈'];
+                const icons = ['🎉', '🎊', '✨', '🌟', '💫', '🎈'];
                 const messages = [
                     "Amazing work! Ready for the next challenge?",
                     "You're getting better and better!",
