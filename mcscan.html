@@ -118,7 +118,6 @@
             
             <div style="margin-top:10px;">
                 <label style="font-size:0.85rem; font-weight:600; color:#334155">Questions per Page</label>
-                <!-- CHANGED DEFAULT VALUE TO 45 -->
                 <input type="number" id="qLimit" class="number-input" value="45" min="1" max="100">
             </div>
         </div>
@@ -226,6 +225,7 @@
     let currentImage = null; 
     let isProcessing = false;
     let hasScanned = false;
+    let currentFileName = "omr_scan"; // Stores the uploaded filename
     
     // Data
     let globalResults = []; 
@@ -280,6 +280,11 @@
     async function handleFile(e) {
         const file = e.target.files[0];
         if (!file) return;
+
+        // Extract filename without extension for export later
+        const nameParts = file.name.split('.');
+        if (nameParts.length > 1) nameParts.pop();
+        currentFileName = nameParts.join('.');
 
         currentPdfDoc = null; currentImage = null;
         globalResults = []; hasScanned = false;
@@ -784,10 +789,22 @@
             csv += line + "\n";
         }
 
+        // Generate Timestamp YYYYMMDD_HHMMSS
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        const timestamp = `${yyyy}${mm}${dd}_${hh}${min}${ss}`;
+
         const blob = new Blob([csv], {type: 'text/csv'});
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = 'omr_results.csv';
+        a.href = url;
+        // Set dynamic filename
+        a.download = `${currentFileName}_result_${timestamp}.csv`;
         a.click();
     }
 
