@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OMR Scanner - Review & Confirm</title>
+    <title>OMR Scanner - Auto Align - V32</title>
+    
+    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    
+    <!-- xlsx-js-style -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --panel: #ffffff; --border: #e2e8f0; }
@@ -18,14 +23,27 @@
         .main-layout { display: flex; flex: 1; overflow: hidden; }
 
         /* Sidebar */
-        .sidebar { width: 320px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; padding: 20px; flex-shrink: 0; }
+        .sidebar { width: 340px; background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; padding: 0; flex-shrink: 0; }
         
+        .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); background: #f1f5f9; }
+        .tab-btn { flex: 1; padding: 12px; border: none; background: none; cursor: pointer; font-weight: 600; color: #64748b; border-bottom: 2px solid transparent; font-size: 0.9rem; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: white; }
+        
+        .sidebar-content { padding: 20px; display: none; }
+        .sidebar-content.active { display: block; }
+
         .control-section { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
         .control-section h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin: 0 0 12px 0; font-weight: 700; }
         
-        .slider-group { margin-bottom: 10px; }
-        .slider-group label { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 4px; }
-        .slider-group input[type="range"] { width: 100%; accent-color: var(--primary); }
+        .slider-group { margin-bottom: 12px; }
+        .slider-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 4px; }
+        
+        .slider-container { display: flex; align-items: center; gap: 10px; }
+        .slider-container input[type="range"] { flex: 1; accent-color: var(--primary); cursor: pointer; }
+        .slider-container input[type="number"] { 
+            width: 60px; padding: 4px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; text-align: right;
+        }
+
         .number-input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; }
         
         .btn { background: var(--primary); color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 8px; transition: background 0.2s; font-size: 0.9rem; }
@@ -35,56 +53,42 @@
         .btn.secondary:hover { background: #475569; }
         .btn.warning { background: #f59e0b; color: #fff; }
         .btn.warning:hover { background: #d97706; }
+        .btn.success { background: #16a34a; color: #fff; }
+        .btn.success:hover { background: #15803d; }
         
+        /* Checkbox style */
+        .checkbox-wrapper { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 8px; background: #eff6ff; border-radius: 4px; border: 1px solid #bfdbfe; }
+        .checkbox-wrapper input { width: 16px; height: 16px; accent-color: var(--primary); }
+        .checkbox-wrapper label { font-size: 0.9rem; font-weight: 600; color: #1e40af; cursor: pointer; }
+
+        /* Answer Key Styles */
+        textarea.key-input { width: 100%; height: 150px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: monospace; resize: vertical; margin-bottom: 10px; }
+        .key-help { font-size: 0.8rem; color: #64748b; margin-bottom: 10px; line-height: 1.4; }
+
         /* Workspace */
         .workspace { flex: 1; background: #cbd5e1; position: relative; display: flex; flex-direction: column; }
         
-        .canvas-container { 
-            flex: 1; 
-            overflow: auto; 
-            display: flex; 
-            padding: 20px; 
-            scroll-behavior: smooth; 
-        }
-        
-        .canvas-wrapper { 
-            position: relative; 
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); 
-            background: white; 
-            margin: auto; 
-            flex-shrink: 0; 
-        }
-        
-        canvas { 
-            display: block; 
-            transform-origin: 0 0; 
-        }
+        .canvas-container { flex: 1; overflow: auto; display: flex; padding: 20px; scroll-behavior: smooth; }
+        .canvas-wrapper { position: relative; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); background: white; margin: auto; flex-shrink: 0; }
+        canvas { display: block; transform-origin: 0 0; }
 
         /* Pagination Bar */
-        .pagination-bar { 
-            background: white; 
-            padding: 10px 20px; 
-            border-bottom: 1px solid var(--border); 
-            display: flex; 
-            justify-content: flex-start; 
-            gap: 20px; 
-            align-items: center; 
-        }
-        
+        .pagination-bar { background: white; padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: flex-start; gap: 20px; align-items: center; }
         .control-divider { width: 1px; height: 24px; background: #e2e8f0; }
-
         .page-controls { display: flex; gap: 10px; align-items: center; }
         .zoom-controls { display: flex; gap: 5px; align-items: center; }
-        
         .page-btn { padding: 5px 15px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; color: #475569; }
         .page-btn:hover { background: #cbd5e1; }
-        
         .zoom-btn { width: 30px; height: 30px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: #475569; display: flex; align-items: center; justify-content: center; }
         .zoom-btn:hover { background: #cbd5e1; }
 
         /* Results Sidebar */
-        .results-sidebar { width: 340px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
-        .results-header { padding: 12px; background: #f1f5f9; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 5px; }
+        .results-sidebar { width: 380px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+        .results-header { padding: 12px; background: #f1f5f9; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        .results-actions { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 5px; }
+        
+        .score-summary { background: #dcfce7; color: #166534; padding: 10px; border-radius: 4px; text-align: center; font-size: 0.9rem; display: none; margin-top: 5px; border: 1px solid #86efac; line-height: 1.4; }
+        
         .results-body { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
         
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; table-layout: fixed; }
@@ -99,6 +103,9 @@
         .status-ok { color: #16a34a; }
         .status-multi { color: #f59e0b; background: #fffbeb; }
         .status-empty { color: #ef4444; background: #fef2f2; }
+        
+        .score-correct { color: #16a34a; font-weight: bold; }
+        .score-wrong { color: #ef4444; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -110,54 +117,132 @@
 
 <div class="main-layout">
     
-    <!-- Controls -->
+    <!-- Controls Sidebar -->
     <div class="sidebar">
-        <div class="control-section">
-            <h3>1. Configuration</h3>
-            <input type="file" id="fileInput" accept=".pdf, .jpg, .png, .jpeg" style="margin-bottom:10px; width:100%">
-            
-            <div style="margin-top:10px;">
-                <label style="font-size:0.85rem; font-weight:600; color:#334155">Questions per Page</label>
-                <input type="number" id="qLimit" class="number-input" value="45" min="1" max="100">
+        <div class="sidebar-tabs">
+            <button class="tab-btn active" onclick="switchTab('tab-scan')">Scanner</button>
+            <button class="tab-btn" onclick="switchTab('tab-key')">Answer Key</button>
+        </div>
+
+        <!-- Scanner Tab -->
+        <div id="tab-scan" class="sidebar-content active">
+            <div class="control-section">
+                <h3>1. Configuration</h3>
+                <input type="file" id="fileInput" accept=".pdf, .jpg, .png, .jpeg" style="margin-bottom:10px; width:100%">
+                
+                <div style="margin-top:10px;">
+                    <label style="font-size:0.85rem; font-weight:600; color:#334155">Questions per Page</label>
+                    <input type="number" id="qLimit" class="number-input" value="45" min="1" max="100">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>2. Grid Adjustments</h3>
+                
+                <div class="slider-group">
+                    <label>Start X</label>
+                    <div class="slider-container">
+                        <input type="range" id="startX" min="0" max="1000" step="1" value="349">
+                        <input type="number" id="startX_num" min="0" max="1000" step="1" value="349">
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Start Y</label>
+                    <div class="slider-container">
+                        <input type="range" id="startY" min="0" max="1000" step="1" value="598">
+                        <input type="number" id="startY_num" min="0" max="1000" step="1" value="598">
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Bubble Width</label>
+                    <div class="slider-container">
+                        <input type="range" id="bubbleWidth" min="10" max="100" step="1" value="29">
+                        <input type="number" id="bubbleWidth_num" min="10" max="100" step="1" value="29">
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Bubble Height</label>
+                    <div class="slider-container">
+                        <input type="range" id="bubbleHeight" min="5" max="100" step="1" value="10">
+                        <input type="number" id="bubbleHeight_num" min="5" max="100" step="1" value="10">
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Option Gap</label>
+                    <div class="slider-container">
+                        <input type="range" id="gapOption" min="20" max="150" step="1" value="38">
+                        <input type="number" id="gapOption_num" min="20" max="150" step="1" value="38">
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Row Gap</label>
+                    <div class="slider-container">
+                        <input type="range" id="gapRow" min="10" max="100" step="1" value="37">
+                        <input type="number" id="gapRow_num" min="10" max="100" step="1" value="37">
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Group/Col Gap</label>
+                    <div class="slider-container">
+                        <input type="range" id="gapGroup" min="50" max="500" step="1" value="217">
+                        <input type="number" id="gapGroup_num" min="50" max="500" step="1" value="217">
+                    </div>
+                </div>
+
+                <div class="slider-group">
+                    <label>Block Gap</label>
+                    <div class="slider-container">
+                        <input type="range" id="gapBlock" min="0" max="100" step="1" value="23">
+                        <input type="number" id="gapBlock_num" min="0" max="100" step="1" value="23">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>3. Actions</h3>
+                
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="autoAlign" checked>
+                    <label for="autoAlign">Auto-Align Position</label>
+                </div>
+                <p style="font-size:0.75rem; color:#64748b; margin-top:-5px; margin-bottom:10px;">
+                    Automatically fixes small misfeeds (up/down/left/right) by scanning for ink near the start position.
+                </p>
+
+                <div class="slider-group">
+                    <label>Darkness Threshold</label>
+                    <div class="slider-container">
+                        <input type="range" id="threshold" min="50" max="230" step="1" value="213">
+                        <input type="number" id="threshold_num" min="50" max="230" step="1" value="213">
+                    </div>
+                </div>
+                <button id="scanBtn" class="btn" onclick="startBatchScan()">Scan All Pages</button>
+                <button id="reScanPageBtn" class="btn secondary" onclick="reScanCurrentPage()" disabled>Rescan Current Page</button>
             </div>
         </div>
 
-        <div class="control-section">
-            <h3>2. Grid Adjustments (Current Page)</h3>
-            <div class="slider-group">
-                <label>Start X <span></span></label> <input type="range" id="startX" min="0" max="1000" value="349">
+        <!-- Answer Key Tab -->
+        <div id="tab-key" class="sidebar-content">
+            <div class="control-section">
+                <h3>Input Answer Key</h3>
+                <p class="key-help">
+                    Enter correct answers separated by commas, spaces, or new lines.<br>
+                    Example: <code>1.A, 2.B, 3.C</code> OR just <code>A B C D</code>
+                </p>
+                <textarea id="answerKeyInput" class="key-input" placeholder="1. A&#10;2. B&#10;3. C..."></textarea>
+                <button class="btn success" onclick="applyAnswerKey()">Calculate Scores</button>
+                <button class="btn secondary" onclick="clearAnswerKey()">Clear Key</button>
             </div>
-            <div class="slider-group">
-                <label>Start Y <span></span></label> <input type="range" id="startY" min="0" max="1000" value="598">
+            <div class="control-section">
+                <h3>Key Status</h3>
+                <div id="keyStatus" style="font-size:0.9rem; color:#334155;">No key loaded.</div>
             </div>
-            <div class="slider-group">
-                <label>Bubble Width <span></span></label> <input type="range" id="bubbleWidth" min="10" max="100" value="29">
-            </div>
-            <div class="slider-group">
-                <label>Bubble Height <span></span></label> <input type="range" id="bubbleHeight" min="5" max="100" value="10">
-            </div>
-            <div class="slider-group">
-                <label>Option Gap <span></span></label> <input type="range" id="gapOption" min="20" max="150" value="38">
-            </div>
-            <div class="slider-group">
-                <label>Row Gap <span></span></label> <input type="range" id="gapRow" min="10" max="100" value="37">
-            </div>
-            <div class="slider-group">
-                <label>Group/Col Gap <span></span></label> <input type="range" id="gapGroup" min="50" max="500" value="217">
-            </div>
-            <div class="slider-group">
-                <label>Block Gap <span></span></label> <input type="range" id="gapBlock" min="0" max="100" value="23">
-            </div>
-        </div>
-
-        <div class="control-section">
-            <h3>3. Actions</h3>
-            <div class="slider-group">
-                <label>Darkness Threshold <span></span></label>
-                <input type="range" id="threshold" min="50" max="230" value="213">
-            </div>
-            <button id="scanBtn" class="btn" onclick="startBatchScan()">Scan All Pages</button>
-            <button id="reScanPageBtn" class="btn secondary" onclick="reScanCurrentPage()" disabled>Rescan Current Page</button>
         </div>
     </div>
 
@@ -193,20 +278,24 @@
     <!-- Results -->
     <div class="results-sidebar">
         <div class="results-header">
-            <div style="display:flex; gap:5px;">
-                <button class="btn warning" style="width:auto; margin:0; padding:6px 10px; font-size:0.8rem;" onclick="findPreviousIssue()">Prev Issue</button>
-                <button class="btn warning" style="width:auto; margin:0; padding:6px 10px; font-size:0.8rem;" onclick="findNextIssue()">Next Issue</button>
+            <div class="results-actions">
+                <div style="display:flex; gap:5px;">
+                    <button class="btn warning" style="width:auto; margin:0; padding:6px 10px; font-size:0.8rem;" onclick="findPreviousIssue()">Prev Issue</button>
+                    <button class="btn warning" style="width:auto; margin:0; padding:6px 10px; font-size:0.8rem;" onclick="findNextIssue()">Next Issue</button>
+                </div>
+                <button class="btn success" style="width:auto; margin:0; padding:6px 10px; font-size:0.8rem;" onclick="downloadMatrixExcel()">Export Excel</button>
             </div>
-            <button class="btn success" style="width:auto; margin:0; padding:6px 10px; font-size:0.8rem; background:#16a34a; color:white;" onclick="downloadMatrixExcel()">Export CSV</button>
+            <div id="scoreSummary" class="score-summary"></div>
         </div>
         <div class="results-body" id="resultsBody">
             <table id="resultsTable">
                 <thead>
                     <tr>
-                        <th style="width:40px">Pg</th>
-                        <th style="width:40px">Q#</th>
-                        <th>Answer (Edit)</th>
-                        <th style="width:50px">Conf</th>
+                        <th style="width:35px">Pg</th>
+                        <th style="width:35px">Q#</th>
+                        <th>Ans</th>
+                        <th style="width:40px">Key</th>
+                        <th style="width:40px">Scr</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -225,17 +314,17 @@
     let currentImage = null; 
     let isProcessing = false;
     let hasScanned = false;
-    let currentFileName = "omr_scan"; // Stores the uploaded filename
+    let currentFileName = "omr_scan";
     
     // Data
     let globalResults = []; 
+    let answerKey = {}; 
     let currentPage = 1;
     let totalPages = 1;
     let activeReviewQ = null; 
     let currentZoom = 1.0;
     
     // Configuration Storage
-    // pageConfigs[pageNumber] = { startX: 100, ... }
     let pageConfigs = {}; 
 
     // Default Config
@@ -246,52 +335,165 @@
         gapRow: 37, gapBlock: 23,
         threshold: 213
     };
-    // Current active config (bound to sliders)
     let config = { ...defaults };
 
     function init() {
-        // Sliders
-        document.querySelectorAll('input[type="range"]').forEach(input => {
-            const labelSpan = input.previousElementSibling.querySelector('span');
-            if(labelSpan) labelSpan.innerText = input.value;
-            
-            input.addEventListener('input', (e) => {
-                const val = parseInt(e.target.value);
-                config[e.target.id] = val;
-                if(labelSpan) labelSpan.innerText = val;
-                
-                // Update the specific config for this page immediately
-                if (!pageConfigs[currentPage]) pageConfigs[currentPage] = {};
-                pageConfigs[currentPage][e.target.id] = val;
-                
-                if(!isProcessing) drawOverlay();
-            });
+        // Initialize Controls (Slider + Number Input pairs)
+        const controlIds = [
+            'startX', 'startY', 'bubbleWidth', 'bubbleHeight', 
+            'gapOption', 'gapRow', 'gapGroup', 'gapBlock', 'threshold'
+        ];
+
+        controlIds.forEach(id => {
+            const rangeInput = document.getElementById(id);
+            const numInput = document.getElementById(id + '_num');
+
+            if (rangeInput && numInput) {
+                rangeInput.addEventListener('input', (e) => {
+                    const val = parseInt(e.target.value);
+                    numInput.value = val;
+                    updateConfig(id, val);
+                });
+
+                numInput.addEventListener('input', (e) => {
+                    let val = parseInt(e.target.value);
+                    if (isNaN(val)) val = 0;
+                    const max = parseInt(rangeInput.max);
+                    if (val > max) val = max; 
+                    rangeInput.value = val;
+                    updateConfig(id, val);
+                });
+            }
         });
 
         document.getElementById('fileInput').addEventListener('change', handleFile);
         
-        // Initial Canvas Text
         canvas.width = 800; canvas.height = 1000;
         ctx.font = "20px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
         ctx.fillText("Upload PDF to Start", 400, 500);
         applyZoom();
     }
 
+    function updateConfig(key, val) {
+        config[key] = val;
+        if (!pageConfigs[currentPage]) pageConfigs[currentPage] = {};
+        pageConfigs[currentPage][key] = val;
+        if(!isProcessing) drawOverlay();
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.sidebar-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
+    }
+
+    // --- ANSWER KEY LOGIC ---
+    function applyAnswerKey() {
+        const rawText = document.getElementById('answerKeyInput').value;
+        if (!rawText.trim()) {
+            alert("Please enter an answer key.");
+            return;
+        }
+
+        answerKey = {};
+        const specificRegex = /(\d+)[\.\:\)\s]+([A-D])/gi;
+        let match;
+        let foundSpecific = false;
+        
+        while ((match = specificRegex.exec(rawText)) !== null) {
+            foundSpecific = true;
+            const qNum = parseInt(match[1]);
+            const ans = match[2].toUpperCase();
+            answerKey[qNum] = ans;
+        }
+
+        if (!foundSpecific) {
+            const tokens = rawText.toUpperCase().split(/[^A-D]+/);
+            let qCounter = 1;
+            tokens.forEach(t => {
+                if (['A','B','C','D'].includes(t)) {
+                    answerKey[qCounter++] = t;
+                }
+            });
+        }
+
+        const count = Object.keys(answerKey).length;
+        document.getElementById('keyStatus').innerText = `Key loaded: ${count} answers defined.`;
+        
+        if (hasScanned) {
+            calculateScores();
+            renderTable();
+        } else {
+            alert(`Key loaded with ${count} answers. Please scan pages to see scores.`);
+        }
+    }
+
+    function clearAnswerKey() {
+        answerKey = {};
+        document.getElementById('answerKeyInput').value = '';
+        document.getElementById('keyStatus').innerText = "No key loaded.";
+        calculateScores();
+        renderTable();
+    }
+
+    function calculateScores() {
+        let totalScoreAllPages = 0;
+        let totalMaxAllPages = 0;
+        const pagesScored = new Set();
+
+        globalResults.forEach(row => {
+            const qNum = row.q;
+            const correctAns = answerKey[qNum];
+            
+            if (correctAns) {
+                pagesScored.add(row.page);
+                totalMaxAllPages++;
+                if (row.a === correctAns) {
+                    row.score = 1;
+                    totalScoreAllPages++;
+                } else {
+                    row.score = 0;
+                }
+                row.correctAns = correctAns; 
+            } else {
+                row.score = null; 
+                row.correctAns = null;
+            }
+        });
+
+        const summaryEl = document.getElementById('scoreSummary');
+        const pageCount = pagesScored.size;
+
+        if (Object.keys(answerKey).length > 0 && pageCount > 0) {
+            const avgScore = (totalScoreAllPages / pageCount).toFixed(1);
+            const maxPerPaper = (totalMaxAllPages / pageCount);
+            summaryEl.style.display = 'block';
+            summaryEl.innerHTML = `<strong>Batch Summary</strong><br>Pages Scored: ${pageCount}<br>Avg Score: ${avgScore} / ${maxPerPaper}`;
+        } else if (Object.keys(answerKey).length > 0) {
+            summaryEl.style.display = 'block';
+            summaryEl.innerText = "Key loaded. Scan pages to see scores.";
+        } else {
+            summaryEl.style.display = 'none';
+        }
+    }
+
+    // --- FILE HANDLING ---
     async function handleFile(e) {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Extract filename without extension for export later
         const nameParts = file.name.split('.');
         if (nameParts.length > 1) nameParts.pop();
         currentFileName = nameParts.join('.');
 
         currentPdfDoc = null; currentImage = null;
         globalResults = []; hasScanned = false;
-        pageConfigs = {}; // Reset page configs
+        pageConfigs = {}; 
         document.querySelector('#resultsTable tbody').innerHTML = '';
         document.getElementById('status').innerText = "Loading...";
         document.getElementById('reScanPageBtn').disabled = true;
+        document.getElementById('scoreSummary').style.display = 'none';
         
         resetZoom();
 
@@ -302,7 +504,6 @@
                 currentPdfDoc = await pdfjsLib.getDocument(typedarray).promise;
                 totalPages = currentPdfDoc.numPages;
                 currentPage = 1;
-                // Initialize config for page 1
                 pageConfigs[1] = { ...config };
                 await viewPage(1);
                 document.getElementById('status').innerText = "Ready. Adjust grid, then Scan.";
@@ -332,11 +533,10 @@
     async function viewPage(pageNum) {
         if (!currentPdfDoc && !currentImage) return;
         
-        // Load config for this page if it exists, otherwise inherit from current or defaults
+        // Load config for this page if it exists (might have been auto-aligned)
         if (pageConfigs[pageNum]) {
             config = { ...pageConfigs[pageNum] };
         } else {
-            // If visiting a new page without config, save current config as its starting point
             pageConfigs[pageNum] = { ...config };
         }
         updateSlidersFromConfig();
@@ -365,11 +565,11 @@
 
     function updateSlidersFromConfig() {
         for (const key in config) {
-            const el = document.getElementById(key);
-            if (el) {
-                el.value = config[key];
-                const span = el.previousElementSibling.querySelector('span');
-                if(span) span.innerText = config[key];
+            const range = document.getElementById(key);
+            const num = document.getElementById(key + '_num');
+            if (range && num) {
+                range.value = config[key];
+                num.value = config[key];
             }
         }
     }
@@ -386,7 +586,6 @@
         document.getElementById('pageIndicator').innerText = `Page ${currentPage} of ${totalPages}`;
     }
 
-    // --- ZOOM FUNCTIONS ---
     function changeZoom(delta) {
         currentZoom = parseFloat((currentZoom + delta).toFixed(1));
         if(currentZoom < 0.2) currentZoom = 0.2;
@@ -413,12 +612,13 @@
         const maxDim = Math.max(w, h);
         if(maxDim > 1000) {
             document.getElementById('startX').max = w;
+            document.getElementById('startX_num').max = w;
             document.getElementById('startY').max = h;
+            document.getElementById('startY_num').max = h;
         }
     }
 
     // --- GEOMETRY ---
-    // Accepts an optional config object to calculate rects based on specific page settings
     function getBubbleRect(qNum, optIndex, specificConfig = config) {
         const qIndex = qNum - 1; 
         const colGroup = Math.floor(qIndex / 25); 
@@ -469,27 +669,17 @@
         pageData.forEach(row => {
             if (row.q > limit) return;
 
-            // 1. Active Question Highlight
             if (activeReviewQ === row.q) {
                 const startRect = getBubbleRect(row.q, 0);
                 const endRect = getBubbleRect(row.q, 3);
                 
                 ctx.strokeStyle = '#2563eb';
                 ctx.lineWidth = 4;
-
-                // Dotted line for EMPTY
-                if (row.a === 'EMPTY') {
-                    ctx.setLineDash([8, 6]); 
-                } else {
-                    ctx.setLineDash([]); 
-                }
-
-                // Draw the bounding box
+                if (row.a === 'EMPTY') ctx.setLineDash([8, 6]); 
+                else ctx.setLineDash([]); 
                 ctx.strokeRect(startRect.x - 8, startRect.y - 8, (endRect.x + endRect.w - startRect.x) + 16, startRect.h + 16);
-                
-                ctx.setLineDash([]); // Reset
+                ctx.setLineDash([]); 
 
-                // Draw the arrow
                 ctx.fillStyle = '#2563eb';
                 ctx.beginPath();
                 ctx.moveTo(startRect.x - 30, startRect.y + (startRect.h/2));
@@ -499,21 +689,73 @@
                 ctx.fill();
             }
 
-            // 2. General Status Overlays
-            if (row.a === 'MULTIPLE') {
-                // No orange rects
-            } else if (row.a === 'EMPTY') {
-                // No fill
-            } else {
+            if (row.a !== 'MULTIPLE' && row.a !== 'EMPTY') {
                 const map = {'A':0, 'B':1, 'C':2, 'D':3};
                 if (map[row.a] !== undefined) {
                     const r = getBubbleRect(row.q, map[row.a]);
-                    ctx.fillStyle = 'rgba(22, 163, 74, 0.5)';
+                    if (row.score === 1) ctx.fillStyle = 'rgba(22, 163, 74, 0.6)'; 
+                    else if (row.score === 0) ctx.fillStyle = 'rgba(239, 68, 68, 0.6)'; 
+                    else ctx.fillStyle = 'rgba(37, 99, 235, 0.5)'; 
                     ctx.fillRect(r.x, r.y, r.w, r.h);
                 }
             }
         });
     }
+
+    // --- AUTO ALIGNMENT LOGIC ---
+    function autoAlignPage(baseConfig) {
+        // We will scan a small area (first 5 questions) with varying offsets
+        // and find the offset that maximizes the darkness of the darkest bubble.
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        let bestScore = -1;
+        let bestOffset = { x: 0, y: 0 };
+        
+        // Search range: +/- 20 pixels
+        const range = 20;
+        const step = 2; // Performance optimization
+
+        for (let dy = -range; dy <= range; dy += step) {
+            for (let dx = -range; dx <= range; dx += step) {
+                
+                let currentScore = 0;
+                const tempConfig = { ...baseConfig, startX: baseConfig.startX + dx, startY: baseConfig.startY + dy };
+                
+                // Check first 5 questions (or less if qLimit is small)
+                for (let q = 1; q <= 5; q++) {
+                    let maxDarkness = 0;
+                    
+                    for (let opt = 0; opt < 4; opt++) {
+                        const rect = getBubbleRect(q, opt, tempConfig);
+                        let totalBrightness = 0;
+                        let count = 0;
+
+                        for (let py = Math.floor(rect.y); py < rect.y + rect.h; py++) {
+                            for (let px = Math.floor(rect.x); px < rect.x + rect.w; px++) {
+                                if(px<0||py<0||px>=canvas.width||py>=canvas.height) continue;
+                                const idx = (py * canvas.width + px) * 4;
+                                totalBrightness += (data[idx] + data[idx+1] + data[idx+2]) / 3;
+                                count++;
+                            }
+                        }
+                        const avg = count > 0 ? totalBrightness / count : 255;
+                        const darkness = 255 - avg; // Higher is darker
+                        if (darkness > maxDarkness) maxDarkness = darkness;
+                    }
+                    currentScore += maxDarkness;
+                }
+
+                if (currentScore > bestScore) {
+                    bestScore = currentScore;
+                    bestOffset = { x: dx, y: dy };
+                }
+            }
+        }
+        
+        return bestOffset;
+    }
+
 
     // --- SCANNING ---
     async function startBatchScan() {
@@ -527,24 +769,36 @@
         document.querySelector('#resultsTable tbody').innerHTML = '';
         
         const qLimit = parseInt(document.getElementById('qLimit').value) || 100;
+        const doAutoAlign = document.getElementById('autoAlign').checked;
 
-        // Save current config as the baseline for all pages initially
+        // Reset page configs to current base config before starting
         for(let p=1; p<=totalPages; p++) {
-            if(!pageConfigs[p]) pageConfigs[p] = { ...config };
+            pageConfigs[p] = { ...config };
         }
 
         if (currentPdfDoc) {
             for (let i = 1; i <= totalPages; i++) {
                 document.getElementById('status').innerText = `Scanning Page ${i} of ${totalPages}...`;
-                // When scanning, we load the page, which sets the 'config' variable to that page's config
                 await viewPage(i); 
-                // Pass the specific config for this page to the scanner
+                
+                if (doAutoAlign) {
+                    const offset = autoAlignPage(config);
+                    // Apply offset permanently to this page's config
+                    pageConfigs[i].startX += offset.x;
+                    pageConfigs[i].startY += offset.y;
+                }
+
                 const results = scanCanvas(i, qLimit, pageConfigs[i]);
                 globalResults.push(...results);
                 await new Promise(r => setTimeout(r, 20));
             }
         } else {
-            const results = scanCanvas(1, qLimit, config);
+            if (doAutoAlign) {
+                const offset = autoAlignPage(config);
+                pageConfigs[1].startX += offset.x;
+                pageConfigs[1].startY += offset.y;
+            }
+            const results = scanCanvas(1, qLimit, pageConfigs[1]);
             globalResults.push(...results);
         }
 
@@ -554,9 +808,11 @@
         document.getElementById('reScanPageBtn').disabled = false;
         document.getElementById('status').innerText = "Scan Complete. Review results.";
         
+        if (Object.keys(answerKey).length > 0) calculateScores();
+
         renderTable();
         currentPage = 1;
-        viewPage(1);
+        viewPage(1); // This will now show the auto-aligned grid
     }
 
     function reScanCurrentPage() {
@@ -564,17 +820,14 @@
         
         const qLimit = parseInt(document.getElementById('qLimit').value) || 100;
         
-        // 1. Remove old results for this page
         globalResults = globalResults.filter(r => r.page !== currentPage);
+        const newResults = scanCanvas(currentPage, qLimit, config); // Uses currently adjusted sliders
         
-        // 2. Scan with current settings
-        const newResults = scanCanvas(currentPage, qLimit, config);
-        
-        // 3. Add new results and sort
         globalResults.push(...newResults);
         globalResults.sort((a, b) => (a.page - b.page) || (a.q - b.q));
         
-        // 4. Update UI
+        if (Object.keys(answerKey).length > 0) calculateScores();
+
         renderTable();
         drawOverlay();
         document.getElementById('status').innerText = `Page ${currentPage} Rescanned.`;
@@ -591,7 +844,6 @@
             let confidences = [];
 
             for (let opt = 0; opt < 4; opt++) {
-                // Use the specific config for rect calculation
                 const rect = getBubbleRect(q, opt, specificConfig);
                 let totalBrightness = 0;
                 let count = 0;
@@ -606,7 +858,6 @@
                 }
                 const avg = count > 0 ? totalBrightness / count : 255;
                 
-                // Use specific threshold
                 if (avg < specificConfig.threshold) {
                     markedIndices.push(opt);
                     confidences.push(Math.floor((255 - avg)));
@@ -629,7 +880,9 @@
                 page: pageNumber, 
                 q: q, 
                 a: finalAnswer, 
-                conf: finalConf 
+                conf: finalConf,
+                score: null,
+                correctAns: null
             });
         }
         return pageResults;
@@ -652,6 +905,7 @@
             const input = document.createElement('input');
             input.type = 'text';
             input.value = row.a;
+            input.id = `input-${row.id}`;
             input.className = `editable-cell ${cssClass}`;
             input.style.width = '80%';
             
@@ -661,6 +915,11 @@
                 if(valid.includes(newVal)) {
                     row.a = newVal;
                     input.className = `editable-cell ${newVal === 'EMPTY' ? 'status-empty' : newVal === 'MULTIPLE' ? 'status-multi' : 'status-ok'}`;
+                    if (row.correctAns) {
+                        row.score = (row.a === row.correctAns) ? 1 : 0;
+                        calculateScores(); 
+                        renderTable(); 
+                    }
                     drawOverlay(); 
                 } else {
                     alert("Invalid input. Use A, B, C, D, EMPTY, or MULTIPLE");
@@ -674,11 +933,21 @@
                 }
             };
 
+            let scoreHtml = '-';
+            if (row.score !== null) {
+                scoreHtml = row.score === 1 
+                    ? `<span class="score-correct">1</span>` 
+                    : `<span class="score-wrong">0</span>`;
+            }
+
+            let keyHtml = row.correctAns ? row.correctAns : '-';
+
             tr.innerHTML = `
                 <td style="color:#64748b">${row.page}</td>
                 <td>${row.q}</td>
                 <td></td>
-                <td style="color:#64748b; font-size:0.8em">${row.conf}%</td>
+                <td style="color:#64748b; text-align:center;">${keyHtml}</td>
+                <td style="text-align:center;">${scoreHtml}</td>
             `;
             tr.children[2].appendChild(input);
             tbody.appendChild(tr);
@@ -698,6 +967,14 @@
         if(row) {
             row.classList.add('selected-row');
             row.scrollIntoView({behavior: "smooth", block: "center"});
+            
+            const input = document.getElementById(`input-${pageNum}-${qNum}`);
+            if (input) {
+                setTimeout(() => {
+                    input.focus();
+                    input.select();
+                }, 100);
+            }
         }
 
         drawOverlay();
@@ -774,38 +1051,133 @@
     function downloadMatrixExcel() {
         if (globalResults.length === 0) return alert("No data to export");
         
-        let csv = "Question";
-        for(let p=1; p<=totalPages; p++) csv += `,Page ${p}`;
-        csv += "\n";
-
         const qLimit = parseInt(document.getElementById('qLimit').value) || 100;
 
-        for(let q=1; q<=qLimit; q++) {
-            let line = `${q}`;
-            for(let p=1; p<=totalPages; p++) {
-                const r = globalResults.find(x => x.page === p && x.q === q);
-                line += `,${r ? r.a : 'EMPTY'}`;
-            }
-            csv += line + "\n";
+        let pageTotals = {};
+        for(let p=1; p<=totalPages; p++) {
+            pageTotals[p] = 0;
+            const pageRows = globalResults.filter(r => r.page === p);
+            pageRows.forEach(r => {
+                if(r.score === 1) pageTotals[p]++;
+            });
         }
 
-        // Generate Timestamp YYYYMMDD_HHMMSS
-        const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const hh = String(now.getHours()).padStart(2, '0');
-        const min = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-        const timestamp = `${yyyy}${mm}${dd}_${hh}${min}${ss}`;
+        const matrixData = [];
+        const headerRow = ["Question"];
+        for(let p=1; p<=totalPages; p++) {
+            headerRow.push(`Page ${p} Ans`);
+            headerRow.push(`Page ${p} Score`);
+        }
+        matrixData.push(headerRow);
 
-        const blob = new Blob([csv], {type: 'text/csv'});
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        // Set dynamic filename
-        a.download = `${currentFileName}_result_${timestamp}.csv`;
-        a.click();
+        const totalRow = ["TOTAL SCORE"];
+        for(let p=1; p<=totalPages; p++) {
+            totalRow.push(""); 
+            totalRow.push(pageTotals[p]); 
+        }
+        matrixData.push(totalRow);
+
+        for(let q=1; q<=qLimit; q++) {
+            const row = [q];
+            for(let p=1; p<=totalPages; p++) {
+                const r = globalResults.find(x => x.page === p && x.q === q);
+                const ans = r ? r.a : 'EMPTY';
+                const score = (r && r.score !== null) ? r.score : '';
+                row.push(ans);
+                row.push(score);
+            }
+            matrixData.push(row);
+        }
+
+        const matrixData2 = [];
+        const headerRow2 = [{ v: "Question", t: "s", s: { font: { bold: true } } }];
+        for(let p=1; p<=totalPages; p++) {
+            headerRow2.push({ v: `Page ${p}`, t: "s", s: { font: { bold: true } } });
+        }
+        headerRow2.push({ v: "Accuracy", t: "s", s: { font: { bold: true }, fill: { fgColor: { rgb: "EFEFEF" } } } });
+        matrixData2.push(headerRow2);
+
+        const totalRow2 = [{ v: "TOTAL SCORE", t: "s", s: { font: { bold: true } } }];
+        let grandTotalScore = 0;
+        let grandTotalMax = totalPages * qLimit; 
+
+        for(let p=1; p<=totalPages; p++) {
+            totalRow2.push({ v: pageTotals[p], t: "n", s: { font: { bold: true } } }); 
+            grandTotalScore += pageTotals[p];
+        }
+        
+        const batchAccuracy = grandTotalMax > 0 ? ((grandTotalScore / grandTotalMax) * 100).toFixed(1) + "%" : "0%";
+        totalRow2.push({ v: batchAccuracy, t: "s", s: { font: { bold: true }, alignment: { horizontal: "center" } } });
+        
+        matrixData2.push(totalRow2);
+
+        for(let q=1; q<=qLimit; q++) {
+            const row = [{ v: q, t: "n" }];
+            const qResults = globalResults.filter(r => r.q === q);
+            let correctCount = 0;
+            
+            for(let p=1; p<=totalPages; p++) {
+                const r = globalResults.find(x => x.page === p && x.q === q);
+                const ans = r ? r.a : 'EMPTY';
+                
+                if (r && r.score === 1) correctCount++;
+                
+                let cellStyle = { fill: { fgColor: { rgb: "FFFFFF" } } };
+                if (ans === 'MULTIPLE') cellStyle = { fill: { fgColor: { rgb: "FFDAB9" } } };
+                else if (ans === 'EMPTY') cellStyle = { fill: { fgColor: { rgb: "E0E0E0" } } };
+                else if (r && r.score === 1) cellStyle = { fill: { fgColor: { rgb: "ADD8E6" } } };
+                else if (r && r.score === 0) cellStyle = { fill: { fgColor: { rgb: "FFCCCB" } } };
+
+                row.push({ v: ans, t: "s", s: cellStyle });
+            }
+
+            const accuracy = totalPages > 0 ? ((correctCount / totalPages) * 100).toFixed(1) + "%" : "0%";
+            row.push({ v: accuracy, t: "s", s: { alignment: { horizontal: "center" } } });
+
+            matrixData2.push(row);
+        }
+
+        const statsData = [];
+        statsData.push(["Question", "Correct Key", "Count A", "Count B", "Count C", "Count D", "Empty", "Multi", "Accuracy (%)"]);
+
+        for (let q = 1; q <= qLimit; q++) {
+            const qResults = globalResults.filter(r => r.q === q);
+            let counts = { A:0, B:0, C:0, D:0, EMPTY:0, MULTIPLE:0 };
+            let correctCount = 0;
+            const key = answerKey[q] || "-";
+
+            qResults.forEach(r => {
+                if (counts[r.a] !== undefined) counts[r.a]++;
+                if (r.score === 1) correctCount++;
+            });
+
+            const accuracy = totalPages > 0 ? ((correctCount / totalPages) * 100).toFixed(1) + "%" : "0%";
+
+            statsData.push([
+                q, key, counts.A, counts.B, counts.C, counts.D, counts.EMPTY, counts.MULTIPLE, accuracy
+            ]);
+        }
+        
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[-:T.]/g, '').slice(0, 14);
+        const filename = `${currentFileName}_scored_${timestamp}.xlsx`;
+
+        const wb = XLSX.utils.book_new();
+        const wsMatrix = XLSX.utils.aoa_to_sheet(matrixData);
+        XLSX.utils.book_append_sheet(wb, wsMatrix, "Results");
+
+        const wsMatrix2 = XLSX.utils.aoa_to_sheet(matrixData2);
+        const wscols = [{ wch: 10 }]; 
+        for(let i=0; i<totalPages; i++) wscols.push({ wch: 8 });
+        wscols.push({ wch: 12 }); 
+        wsMatrix2['!cols'] = wscols;
+        
+        XLSX.utils.book_append_sheet(wb, wsMatrix2, "Results2");
+
+        const wsStats = XLSX.utils.aoa_to_sheet(statsData);
+        XLSX.utils.book_append_sheet(wb, wsStats, "Statistics");
+
+        XLSX.writeFile(wb, filename);
     }
 
     init();
