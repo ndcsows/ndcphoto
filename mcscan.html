@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OMR Scanner - Auto Align V36</title>
+    <title>OMR Scanner - Auto Align V40</title>
     
     <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -16,13 +16,112 @@
         :root { --primary: #2563eb; --bg: #f8fafc; --panel: #ffffff; --border: #e2e8f0; }
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; }
         
-        header { background: white; padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); z-index: 10; }
+        /* Header z-index increased to 1001 to sit ABOVE the onboarding overlay */
+        header { background: white; padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); z-index: 1001; position: relative; }
         h1 { margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 600; }
-        .header-right { display: flex; align-items: center; gap: 15px; }
+        .header-right { display: flex; align-items: center; gap: 15px; position: relative; }
         #status { font-size: 0.9rem; color: var(--primary); font-weight: 500; }
         
-        .help-btn { background: #e2e8f0; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: bold; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .help-btn { background: #e2e8f0; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: bold; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; z-index: 20; transition: all 0.3s ease; }
         .help-btn:hover { background: #cbd5e1; color: #1e293b; }
+
+        /* --- High Visibility Onboarding Styles --- */
+        
+        /* Pulse Animation for the Help Button */
+        @keyframes pulse-strong {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+            50% { transform: scale(1.2); box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+        
+        .help-attention {
+            animation: pulse-strong 1.5s infinite;
+            background-color: #2563eb !important; /* Bright Blue */
+            color: white !important;
+            border: 2px solid white;
+            z-index: 1002; /* Topmost */
+        }
+
+        /* The Dark Overlay */
+        .onboarding-overlay {
+            position: fixed;
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85); /* Darker dim */
+            z-index: 1000; 
+            display: none; 
+            pointer-events: auto;
+            backdrop-filter: blur(4px);
+        }
+
+        /* The Center Container */
+        .onboarding-pointer {
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            text-align: center;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
+            z-index: 1004; /* Above the arrow canvas */
+        }
+
+        .onboarding-text {
+            font-size: 3.5rem; 
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.1;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        /* Target span for the arrow start point */
+        #hereTarget {
+            display: inline-block;
+            color: #60a5fa; /* Highlight the word "HERE" */
+        }
+
+        .onboarding-subtext {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: #e2e8f0;
+            margin-top: 20px;
+            opacity: 0.8;
+        }
+
+        /* --- NEW ARROW STYLES --- */
+        #arrowCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1003; /* Between text and overlay background */
+            overflow: visible;
+        }
+
+        .arrow-path {
+            fill: none;
+            stroke: #60a5fa; /* Light Blue */
+            stroke-width: 6;
+            stroke-linecap: round;
+            marker-end: url(#arrowhead);
+            filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.6));
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawArrow 1.5s ease-out forwards;
+        }
+
+        @keyframes drawArrow {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* --------------------------------------- */
 
         .main-layout { display: flex; flex: 1; overflow: hidden; }
 
@@ -112,7 +211,7 @@
         .score-wrong { color: #ef4444; font-weight: bold; }
 
         /* Modal */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: none; justify-content: center; align-items: center; }
         .modal-content { background: white; width: 550px; max-width: 90%; max-height: 90vh; overflow-y: auto; padding: 25px; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
         .modal-header h2 { margin: 0; font-size: 1.2rem; color: #1e293b; }
@@ -128,11 +227,30 @@
 </head>
 <body>
 
+<!-- NEW: Onboarding Overlay -->
+<div id="onboardingOverlay" class="onboarding-overlay" onclick="dismissOnboarding()">
+    
+    <!-- Full Screen SVG for the Arrow -->
+    <svg id="arrowCanvas" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <defs>
+            <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6" style="fill: #60a5fa;" />
+            </marker>
+        </defs>
+        <path id="arrowPath" class="arrow-path" d="" />
+    </svg>
+
+    <div class="onboarding-pointer">
+        <div class="onboarding-text">CLICK <span id="hereTarget">HERE</span> FOR<br>USER GUIDE</div>
+        <div class="onboarding-subtext">(Click anywhere to dismiss)</div>
+    </div>
+</div>
+
 <header>
     <h1>OMR Review Tool</h1>
     <div class="header-right">
         <div id="status">Waiting for file...</div>
-        <button class="help-btn" onclick="toggleHelp()" title="User Guide">?</button>
+        <button id="helpBtn" class="help-btn" onclick="toggleHelp()" title="User Guide">?</button>
     </div>
 </header>
 
@@ -512,9 +630,65 @@
         ctx.font = "20px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
         ctx.fillText("Upload PDF to Start", 400, 500);
         applyZoom();
+
+        // --- Trigger Full Screen Attention Effect ---
+        const helpBtn = document.getElementById('helpBtn');
+        const overlay = document.getElementById('onboardingOverlay');
+        
+        helpBtn.classList.add('help-attention');
+        overlay.style.display = 'block'; 
+        
+        // Draw the arrow initially and on resize
+        setTimeout(drawArrowToHelp, 100);
+        window.addEventListener('resize', drawArrowToHelp);
+    }
+
+    function drawArrowToHelp() {
+        const overlay = document.getElementById('onboardingOverlay');
+        if(overlay.style.display === 'none') return;
+
+        const startEl = document.getElementById('hereTarget');
+        const endEl = document.getElementById('helpBtn');
+        const path = document.getElementById('arrowPath');
+        const svg = document.getElementById('arrowCanvas');
+        
+        if(!startEl || !endEl || !path || !svg) return;
+
+        // Ensure SVG matches window size
+        svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+
+        const startRect = startEl.getBoundingClientRect();
+        const endRect = endEl.getBoundingClientRect();
+
+        // Start: Top-Right of the word "HERE"
+        const sX = startRect.right;
+        const sY = startRect.top + 5; // Slightly down from top edge
+
+        // End: Bottom-Center of Help Button
+        const eX = endRect.left + (endRect.width / 2);
+        const eY = endRect.bottom + 10; // Point slightly below it
+
+        // Control point for quadratic curve (creates a nice arc)
+        // We want it to curve upwards and to the right
+        const cX = sX + (eX - sX) * 0.2; 
+        const cY = eY + (sY - eY) * 0.8;
+
+        // Draw Quadratic Bezier Curve
+        path.setAttribute('d', `M ${sX} ${sY} Q ${cX} ${cY} ${eX} ${eY}`);
+    }
+
+    function dismissOnboarding() {
+        const overlay = document.getElementById('onboardingOverlay');
+        const helpBtn = document.getElementById('helpBtn');
+        
+        overlay.style.display = 'none';
+        helpBtn.classList.remove('help-attention');
     }
 
     function toggleHelp() {
+        // Dismiss onboarding if it's open
+        dismissOnboarding();
+
         const modal = document.getElementById('helpModal');
         if (modal.style.display === 'flex') {
             modal.style.display = 'none';
