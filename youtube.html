@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YTPure – Ad-Free YouTube Viewer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f0f0f; --surface: #181818; --surface2: #242424;
+      --border: #2e2e2e; --red: #ff0000; --text: #e0e0e0; --muted: #888;
+      --green: #6fcf6f; --green-bg: #1a3a1a; --green-border: #2d6a2d;
+      --blue: #6aadcf; --blue-bg: #1a2a3a; --blue-border: #2a4a6a;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, sans-serif; min-height: 100vh; }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 200;
+      background: var(--surface); border-bottom: 2px solid var(--red);
+      padding: 12px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; cursor: pointer; }
+    .logo-icon { width: 34px; height: 24px; background: var(--red); border-radius: 5px; display: flex; align-items: center; justify-content: center; }
+    .logo-text { font-size: 1.2rem; font-weight: 700; color: #fff; white-space: nowrap; }
+    .logo-text span { color: var(--red); }
+
+    .search-form { flex: 1; display: flex; max-width: 700px; min-width: 180px; }
+    .search-input {
+      flex: 1; padding: 10px 18px; background: #262626;
+      border: 1.5px solid var(--border); border-right: none;
+      border-radius: 24px 0 0 24px; color: #fff; font-size: 0.95rem; outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--red); }
+    .search-input::placeholder { color: var(--muted); }
+    .search-btn {
+      padding: 10px 20px; background: #333;
+      border: 1.5px solid var(--border); border-left: none;
+      border-radius: 0 24px 24px 0; color: #fff; cursor: pointer;
+      font-size: 0.95rem; transition: background 0.2s; white-space: nowrap;
+    }
+    .search-btn:hover { background: var(--red); border-color: var(--red); }
+
+    .key-btn {
+      background: var(--surface2); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 8px 14px; color: var(--muted);
+      cursor: pointer; font-size: 0.8rem; transition: all 0.2s; white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .key-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .key-btn.has-key { color: var(--green); border-color: var(--green-border); background: var(--green-bg); }
+
+    /* ── Container ── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 22px; }
+
+    /* ── Setup Screen ── */
+    #setup-screen {
+      background: var(--surface); border-radius: 14px; padding: 36px;
+      max-width: 680px; margin: 40px auto; border: 1px solid var(--border);
+    }
+    #setup-screen h2 { font-size: 1.3rem; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+    #setup-screen .subtitle { color: var(--muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 28px; }
+
+    .steps { display: flex; flex-direction: column; gap: 16px; margin-bottom: 28px; }
+    .step { display: flex; gap: 14px; align-items: flex-start; }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%; background: var(--red);
+      color: #fff; font-weight: 700; font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+    }
+    .step-body { flex: 1; font-size: 0.88rem; line-height: 1.6; color: #ccc; }
+    .step-body strong { color: #fff; }
+    .step-body a { color: var(--blue); text-decoration: none; }
+    .step-body a:hover { text-decoration: underline; }
+    .step-body code { background: #2a2a2a; border-radius: 4px; padding: 1px 6px; font-size: 0.82rem; color: #ffd080; }
+
+    .key-input-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .key-field {
+      flex: 1; min-width: 200px; padding: 11px 16px;
+      background: #262626; border: 1.5px solid var(--border);
+      border-radius: 8px; color: #fff; font-size: 0.9rem; outline: none;
+      font-family: monospace; transition: border-color 0.2s;
+    }
+    .key-field:focus { border-color: var(--blue); }
+    .key-field::placeholder { color: #555; font-family: 'Segoe UI', sans-serif; }
+    .save-key-btn {
+      padding: 11px 24px; background: var(--red); border: none;
+      border-radius: 8px; color: #fff; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
+    }
+    .save-key-btn:hover { opacity: 0.85; }
+
+    .key-note { font-size: 0.78rem; color: #555; margin-top: 10px; line-height: 1.5; }
+    .key-note a { color: var(--muted); }
+
+    /* ── Player ── */
+    #player-section { display: none; }
+    #player-section.show { display: block; }
+    .player-layout { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 860px) { .player-layout { grid-template-columns: 3fr 1.2fr; } }
+    .video-embed-wrap {
+      position: relative; padding-top: 56.25%; background: #000;
+      border-radius: 10px; overflow: hidden; box-shadow: 0 6px 28px rgba(0,0,0,0.55);
+    }
+    .video-embed-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+    .now-playing-info { background: var(--surface); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+    .ad-free-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--green-bg); border: 1px solid var(--green-border); color: var(--green);
+      border-radius: 6px; padding: 5px 12px; font-size: 0.75rem; width: fit-content;
+    }
+    .now-playing-info h2 { font-size: 0.98rem; line-height: 1.5; color: #fff; }
+    .np-channel { color: var(--muted); font-size: 0.85rem; }
+    .np-meta { color: #555; font-size: 0.78rem; }
+    .np-yt-link {
+      display: inline-block; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 12px; font-size: 0.8rem; color: #bbb;
+      text-decoration: none; transition: all 0.2s; margin-top: 4px;
+    }
+    .np-yt-link:hover { border-color: var(--red); color: #fff; }
+
+    /* ── Results ── */
+    .section-hd { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px; }
+    #results-section { display: none; }
+    #results-section.show { display: block; }
+    .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+    .video-card {
+      background: var(--surface); border-radius: 10px; overflow: hidden;
+      cursor: pointer; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      border: 1.5px solid transparent;
+    }
+    .video-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); border-color: var(--red); }
+    .thumb-wrap { position: relative; padding-top: 56.25%; background: #111; overflow: hidden; }
+    .thumb-wrap img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }
+    .video-card:hover .thumb-wrap img { transform: scale(1.04); }
+    .card-body { padding: 10px 12px 14px; }
+    .card-title { font-size: 0.87rem; line-height: 1.4; color: #fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 5px; }
+    .card-channel { font-size: 0.78rem; color: var(--muted); }
+    .card-meta { font-size: 0.73rem; color: #555; margin-top: 2px; }
+
+    /* ── Loading ── */
+    .loading { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 60px 20px; color: var(--muted); font-size: 0.9rem; }
+    .spinner { width: 24px; height: 24px; border: 3px solid #333; border-top-color: var(--red); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .info-box {
+      border-radius: 10px; padding: 16px 20px; font-size: 0.87rem; line-height: 1.7;
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .info-box.error { background: #2a1111; border: 1px solid #5a2020; color: #ff9a9a; }
+    .info-box.info  { background: var(--blue-bg); border: 1px solid var(--blue-border); color: #aacfe0; }
+    .info-box .icon { font-size: 1.2rem; flex-shrink: 0; }
+    .info-box strong { display: block; margin-bottom: 4px; }
+    .info-box small { opacity: 0.5; font-size: 0.72rem; display: block; margin-top: 6px; font-family: monospace; word-break: break-all; }
+
+    /* ── Welcome ── */
+    #welcome-section { text-align: center; padding: 60px 20px 30px; }
+    #welcome-section h2 { font-size: 1.6rem; margin-bottom: 10px; }
+    #welcome-section p { color: var(--muted); font-size: 0.92rem; line-height: 1.7; max-width: 500px; margin: 0 auto 28px; }
+    .suggest-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: #555; margin-bottom: 12px; }
+    .suggest-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .suggest-chip { background: var(--surface); border: 1.5px solid var(--border); border-radius: 20px; padding: 8px 18px; font-size: 0.85rem; color: #ccc; cursor: pointer; transition: all 0.2s; }
+    .suggest-chip:hover { border-color: var(--red); color: #fff; background: var(--surface2); }
+
+    /* ── History ── */
+    #history-section { display: none; }
+    #history-section.show { display: block; }
+    .history-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .history-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 0.8rem; color: #bbb; cursor: pointer; transition: all 0.15s; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .history-chip:hover { border-color: var(--red); color: #fff; }
+    .no-results { text-align: center; padding: 48px; color: var(--muted); }
+
+    /* ── Quota indicator ── */
+    .quota-bar { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #555; }
+    .quota-fill { height: 4px; border-radius: 2px; background: var(--green); transition: width 0.3s; }
+    .quota-track { flex: 1; max-width: 120px; height: 4px; background: #2a2a2a; border-radius: 2px; overflow: hidden; }
+
+    @media (max-width: 600px) {
+      .results-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); }
+      #setup-screen { padding: 22px 16px; }
+      #welcome-section h2 { font-size: 1.2rem; }
+      .key-btn span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo" onclick="goHome()">
+    <div class="logo-icon">
+      <svg width="18" height="18" fill="white" viewBox="0 0 24 24">
+        <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+      </svg>
+    </div>
+    <span class="logo-text">YT<span>Pure</span></span>
+  </div>
+  <form class="search-form" id="searchForm">
+    <input class="search-input" id="searchInput" type="text"
+      placeholder="Search by keyword or paste a YouTube URL…" autocomplete="off"/>
+    <button class="search-btn" type="submit">🔍 Search</button>
+  </form>
+  <button class="key-btn" id="keyBtn" onclick="showSetup()" title="Manage API Key">
+    🔑 <span id="keyBtnLabel">API Key</span>
+  </button>
+</header>
+
+<div class="container">
+
+  <!-- Setup Screen -->
+  <div id="setup-screen" style="display:none">
+    <h2>🔑 Set Up Your YouTube API Key</h2>
+    <p class="subtitle">
+      This app uses the official <strong>YouTube Data API v3</strong> — Google's own API, which
+      works perfectly in browsers with no CORS issues. You get <strong>100 free searches per day</strong>
+      on a free Google account. Setup takes about 2 minutes:
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a>
+          and sign in with your Google account.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          Click <strong>Select a project → New Project</strong>. Give it any name (e.g. <code>ytpure</code>) and click <strong>Create</strong>.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          In the left menu go to <strong>APIs & Services → Library</strong>. Search for
+          <code>YouTube Data API v3</code> and click <strong>Enable</strong>.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          Go to <strong>APIs & Services → Credentials → Create Credentials → API key</strong>.
+          Copy the key that appears.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          Paste your key below and click <strong>Save & Start Searching</strong>.
+        </div>
+      </div>
+    </div>
+
+    <div class="key-input-row">
+      <input class="key-field" id="apiKeyField" type="text"
+        placeholder="Paste your API key here — AIza…" autocomplete="off" spellcheck="false"/>
+      <button class="save-key-btn" onclick="saveApiKey()">Save & Start</button>
+    </div>
+    <p class="key-note">
+      🔒 Your key is stored only in your browser's localStorage and never sent anywhere except directly to Google's API.
+      &nbsp;•&nbsp; <a href="https://developers.google.com/youtube/v3/getting-started" target="_blank" rel="noopener">Official docs ↗</a>
+    </p>
+  </div>
+
+  <!-- Player -->
+  <section id="player-section">
+    <div class="player-layout">
+      <div class="video-embed-wrap">
+        <iframe id="ytFrame" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+      </div>
+      <div class="now-playing-info">
+        <div class="ad-free-badge">✓ Privacy-Enhanced Embed — No Ads</div>
+        <h2 id="np-title">—</h2>
+        <div class="np-channel" id="np-channel"></div>
+        <div class="np-meta" id="np-meta"></div>
+        <a class="np-yt-link" id="np-yt-link" href="#" target="_blank" rel="noopener">↗ Open on YouTube</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search Results -->
+  <section id="results-section">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
+      <div class="section-hd" style="margin-bottom:0" id="results-label">Search Results</div>
+      <div class="quota-bar" id="quota-bar" style="display:none">
+        <span id="quota-text">0 / 100 searches today</span>
+        <div class="quota-track"><div class="quota-fill" id="quota-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div id="results-content"></div>
+  </section>
+
+  <!-- History -->
+  <section id="history-section">
+    <div class="section-hd">🕘 Recently Watched</div>
+    <div class="history-chips" id="history-chips"></div>
+  </section>
+
+  <!-- Welcome -->
+  <section id="welcome-section">
+    <h2>🎬 Ad-Free YouTube Viewer</h2>
+    <p>Search any keyword, or paste a YouTube URL to watch instantly.<br/>
+    All videos play via <strong>youtube-nocookie.com</strong> — no ads, no tracking.</p>
+    <div class="suggest-label">✨ Try searching for</div>
+    <div class="suggest-chips">
+      <div class="suggest-chip" onclick="doSearch('lofi hip hop music')">🎵 Lofi Hip Hop</div>
+      <div class="suggest-chip" onclick="doSearch('nature documentary 4K')">🌿 Nature 4K</div>
+      <div class="suggest-chip" onclick="doSearch('javascript tutorial')">💻 JS Tutorial</div>
+      <div class="suggest-chip" onclick="doSearch('funny cats')">🐱 Funny Cats</div>
+      <div class="suggest-chip" onclick="doSearch('easy cooking recipes')">🍳 Cooking</div>
+      <div class="suggest-chip" onclick="doSearch('space exploration')">🚀 Space</div>
+      <div class="suggest-chip" onclick="doSearch('acoustic guitar')">🎸 Guitar</div>
+      <div class="suggest-chip" onclick="doSearch('workout motivation')">💪 Workout</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let API_KEY      = localStorage.getItem('yt_api_key') || '';
+let videoMeta    = {};
+let watchHistory = JSON.parse(localStorage.getItem('yt_history') || '[]');
+let searchCount  = getSearchCount();
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+function init() {
+  renderHistory();
+  updateKeyBtn();
+  if (!API_KEY) {
+    showSetup();
+  }
+}
+
+function getSearchCount() {
+  const saved = JSON.parse(localStorage.getItem('yt_quota') || '{"date":"","count":0}');
+  const today = new Date().toDateString();
+  if (saved.date !== today) return 0;
+  return saved.count;
+}
+
+function bumpSearchCount() {
+  searchCount++;
+  localStorage.setItem('yt_quota', JSON.stringify({ date: new Date().toDateString(), count: searchCount }));
+  updateQuotaBar();
+}
+
+function updateQuotaBar() {
+  const bar  = document.getElementById('quota-bar');
+  const text = document.getElementById('quota-text');
+  const fill = document.getElementById('quota-fill');
+  bar.style.display = 'flex';
+  text.textContent  = `${searchCount} / 100 searches today`;
+  const pct = Math.min(100, searchCount);
+  fill.style.width  = pct + '%';
+  fill.style.background = pct > 80 ? '#ff6b6b' : pct > 50 ? '#ffd080' : 'var(--green)';
+}
+
+function updateKeyBtn() {
+  const btn   = document.getElementById('keyBtn');
+  const label = document.getElementById('keyBtnLabel');
+  if (API_KEY) {
+    btn.classList.add('has-key');
+    label.textContent = '✓ API Key';
+  } else {
+    btn.classList.remove('has-key');
+    label.textContent = 'API Key';
+  }
+}
+
+// ─────────────────────────────────────────────
+//  SETUP SCREEN
+// ─────────────────────────────────────────────
+function showSetup() {
+  hide('welcome-section');
+  hide('results-section');
+  show('setup-screen', 'block');
+  document.getElementById('apiKeyField').value = API_KEY;
+  document.getElementById('apiKeyField').focus();
+}
+
+function saveApiKey() {
+  const val = document.getElementById('apiKeyField').value.trim();
+  if (!val) { shake('apiKeyField'); return; }
+  API_KEY = val;
+  localStorage.setItem('yt_api_key', val);
+  updateKeyBtn();
+  hide('setup-screen');
+  show('welcome-section', 'block');
+}
+
+document.getElementById('apiKeyField').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveApiKey();
+});
+
+function shake(id) {
+  const el = document.getElementById(id);
+  el.style.borderColor = 'var(--red)';
+  el.style.animation = 'none';
+  setTimeout(() => { el.style.borderColor = ''; }, 1500);
+}
+
+// ─────────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────────
+function show(id, display='block') { document.getElementById(id).style.display = display; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+function extractVideoId(input) {
+  input = input.trim();
+  let m;
+  if ((m = input.match(/[?&]v=([a-zA-Z0-9_-]{11})/)))              return m[1];
+  if ((m = input.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/)))         return m[1];
+  if ((m = input.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/))) return m[1];
+  if ((m = input.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/))) return m[1];
+  if (/^[a-zA-Z0-9_-]{11}$/.test(input))                           return input;
+  return null;
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }); }
+  catch { return ''; }
+}
+
+function goHome() {
+  hide('setup-screen');
+  hide('results-section');
+  show('welcome-section', 'block');
+  document.getElementById('searchInput').value = '';
+}
+
+// ─────────────────────────────────────────────
+//  SEARCH  (YouTube Data API v3)
+// ─────────────────────────────────────────────
+document.getElementById('searchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const val = document.getElementById('searchInput').value.trim();
+  if (!val) return;
+  if (!API_KEY) { showSetup(); return; }
+  const vid = extractVideoId(val);
+  vid ? playVideo(vid) : doSearch(val);
+});
+
+async function doSearch(query) {
+  document.getElementById('searchInput').value = query;
+  hide('welcome-section');
+  hide('setup-screen');
+  const rs = document.getElementById('results-section');
+  rs.classList.add('show');
+  rs.style.display = 'block';
+  document.getElementById('results-label').textContent = `Results for "${query}"`;
+  document.getElementById('results-content').innerHTML =
+    `<div class="loading"><div class="spinner"></div>Searching…</div>`;
+
+  try {
+    const url = new URL('https://www.googleapis.com/youtube/v3/search');
+    url.searchParams.set('part',       'snippet');
+    url.searchParams.set('q',          query);
+    url.searchParams.set('type',       'video');
+    url.searchParams.set('maxResults', '24');
+    url.searchParams.set('key',        API_KEY);
+
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Handle specific Google API errors gracefully
+      const reason = data?.error?.errors?.[0]?.reason || '';
+      const msg    = data?.error?.message || 'Unknown error';
+
+      if (reason === 'keyInvalid' || reason === 'badRequest') {
+        document.getElementById('results-content').innerHTML = `
+          <div class="info-box error">
+            <div class="icon">🔑</div>
+            <div>
+              <strong>Invalid API Key</strong>
+              Your API key was rejected. Please double-check it.
+              <br/><br/>
+              <button class="save-key-btn" onclick="showSetup()" style="font-size:0.82rem;padding:7px 16px">Update API Key</button>
+            </div>
+          </div>`;
+        return;
+      }
+
+      if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') {
+        document.getElementById('results-content').innerHTML = `
+          <div class="info-box error">
+            <div class="icon">⚠️</div>
+            <div>
+              <strong>Daily Quota Exceeded</strong>
+              You've used all 100 free searches for today. Quota resets at midnight Pacific Time.
+              You can still watch videos by pasting a YouTube URL directly.
+            </div>
+          </div>`;
+        return;
+      }
+
+      throw new Error(msg);
+    }
+
+    bumpSearchCount();
+    renderResults(data.items || [], query);
+
+  } catch(err) {
+    document.getElementById('results-content').innerHTML = `
+      <div class="info-box error">
+        <div class="icon">⚠️</div>
+        <div>
+          <strong>Search Failed</strong>
+          ${esc(err.message)}
+          <small>Check your network connection and try again.</small>
+        </div>
+      </div>`;
+  }
+}
+
+function renderResults(items, query) {
+  if (!items.length) {
+    document.getElementById('results-content').innerHTML =
+      `<div class="no-results">No videos found for "<strong>${esc(query)}</strong>". Try different keywords.</div>`;
+    return;
+  }
+
+  items.forEach(item => {
+    const id = item.id?.videoId;
+    if (!id) return;
+    videoMeta[id] = {
+      title:     item.snippet?.title || id,
+      channel:   item.snippet?.channelTitle || '',
+      published: fmtDate(item.snippet?.publishedAt),
+      thumb:     item.snippet?.thumbnails?.medium?.url ||
+                 `https://i.ytimg.com/vi/${id}/mqdefault.jpg`,
+    };
+  });
+
+  const placeholder = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='180'><rect width='320' height='180' fill='%23111'/><text x='50%25' y='50%25' fill='%23444' font-size='40' text-anchor='middle' dominant-baseline='middle'>▶</text></svg>`;
+
+  const html = items.map(item => {
+    const id = item.id?.videoId;
+    if (!id) return '';
+    const m = videoMeta[id];
+    return `
+      <div class="video-card" data-vid="${esc(id)}">
+        <div class="thumb-wrap">
+          <img src="${esc(m.thumb)}" loading="lazy" alt=""
+               onerror="this.src='${placeholder}'"/>
+        </div>
+        <div class="card-body">
+          <div class="card-title">${esc(m.title)}</div>
+          <div class="card-channel">${esc(m.channel)}</div>
+          <div class="card-meta">${esc(m.published)}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('results-content').innerHTML =
+    `<div class="results-grid">${html}</div>`;
+
+  document.getElementById('results-content').onclick = e => {
+    const card = e.target.closest('.video-card');
+    if (card) playVideo(card.dataset.vid);
+  };
+
+  updateQuotaBar();
+}
+
+// ─────────────────────────────────────────────
+//  PLAY
+// ─────────────────────────────────────────────
+function playVideo(videoId) {
+  const m = videoMeta[videoId] || { title: videoId, channel: '', published: '' };
+
+  document.getElementById('ytFrame').src =
+    `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+  document.getElementById('np-title').textContent   = m.title;
+  document.getElementById('np-channel').textContent = m.channel;
+  document.getElementById('np-meta').textContent    = m.published;
+  document.getElementById('np-yt-link').href        = `https://www.youtube.com/watch?v=${videoId}`;
+
+  const sec = document.getElementById('player-section');
+  sec.classList.add('show');
+  sec.style.display = 'block';
+  sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  addHistory(videoId, m.title, m.channel);
+}
+
+// ─────────────────────────────────────────────
+//  HISTORY
+// ─────────────────────────────────────────────
+function addHistory(videoId, title, channel) {
+  watchHistory = watchHistory.filter(h => h.videoId !== videoId);
+  watchHistory.unshift({ videoId, title, channel });
+  if (watchHistory.length > 12) watchHistory.pop();
+  localStorage.setItem('yt_history', JSON.stringify(watchHistory));
+  renderHistory();
+}
+
+function renderHistory() {
+  const sec   = document.getElementById('history-section');
+  const chips = document.getElementById('history-chips');
+  if (!watchHistory.length) { sec.classList.remove('show'); sec.style.display='none'; return; }
+  sec.classList.add('show'); sec.style.display = 'block';
+  chips.innerHTML = watchHistory.map(h => `
+    <div class="history-chip" data-vid="${esc(h.videoId)}" title="${esc(h.title)}">
+      ▶ ${esc(h.title)}
+    </div>`).join('');
+  chips.onclick = e => {
+    const chip = e.target.closest('.history-chip');
+    if (chip) playVideo(chip.dataset.vid);
+  };
+}
+
+init();
+</script>
+</body>
+</html>
