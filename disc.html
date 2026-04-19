@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>積分應用：旋轉體體積視覺化</title>
+    <title>積分應用：旋轉體體積視覺化 | Solid of Revolution Visualization</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -18,13 +18,18 @@
 
     <div id="canvas-container"></div>
 
+    <!-- Language Toggle Button -->
+    <button onclick="toggleLanguage()" class="absolute top-4 right-4 bg-white/90 hover:bg-white text-blue-600 px-4 py-2 rounded-full shadow-lg font-bold text-sm transition-all border border-blue-200 z-10">
+        中文 / EN
+    </button>
+
     <!-- 頂部浮動數據面板 -->
     <div id="data-panel" class="absolute top-4 left-4 bg-slate-900/80 text-white p-3 rounded-lg border border-slate-700 pointer-events-none hidden">
-        <div class="text-xs uppercase tracking-wider text-slate-400 mb-1">當前切片數據 (Disc Info)</div>
+        <div id="lang-data-title" class="text-xs uppercase tracking-wider text-slate-400 mb-1">當前切片數據 (Disc Info)</div>
         <div class="space-y-1 font-mono text-sm">
-            <div>位置 x = <span id="data-x" class="text-blue-400">0.00</span></div>
-            <div>半徑 r = f(x) = <span id="data-r" class="text-yellow-400">0.00</span></div>
-            <div>面積 A = πr² = <span id="data-a" class="text-green-400">0.00</span></div>
+            <div><span id="lang-pos">位置</span> x = <span id="data-x" class="text-blue-400">0.00</span></div>
+            <div><span id="lang-rad">半徑</span> r = f(x) = <span id="data-r" class="text-yellow-400">0.00</span></div>
+            <div><span id="lang-area">面積</span> A = πr² = <span id="data-a" class="text-green-400">0.00</span></div>
         </div>
     </div>
 
@@ -32,20 +37,23 @@
         <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- 參數調整 -->
             <div class="space-y-4">
-                <h1 class="text-xl font-black text-gray-800 border-l-4 border-blue-600 pl-2">參數控制</h1>
+                <h1 id="lang-param-title" class="text-xl font-black text-gray-800 border-l-4 border-blue-600 pl-2">參數控制</h1>
                 
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1">函數選擇</label>
+                    <label id="lang-func-select" class="block text-xs font-bold text-gray-500 mb-1">函數選擇</label>
                     <select id="funcSelect" onchange="changeFunc(this.value)" class="w-full p-2 border rounded bg-gray-50 text-sm">
                         <option value="linear">y = 0.5x</option>
                         <option value="sqrt">y = √x</option>
                         <option value="sin">y = sin(x) + 1</option>
+                        <option value="sqrt2x1">y = √(2x + 1)</option>
+                        <option value="invSqrt">y = 1/√x (x: 1~4)</option>
+                        <option value="ellipse">4x² + 9y² = 36 (x: -3~3)</option>
                     </select>
                 </div>
                 
                 <div>
                     <div class="flex justify-between text-xs font-bold text-gray-500 mb-1">
-                        <span>旋轉角度 (0° - 360°)</span>
+                        <span id="lang-rot-angle">旋轉角度 (0° - 360°)</span>
                         <span id="angleValue" class="text-blue-600">0°</span>
                     </div>
                     <input type="range" id="angleSlider" min="270" max="630" value="270" class="w-full">
@@ -53,7 +61,7 @@
 
                 <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                     <div class="flex justify-between text-xs font-bold text-yellow-700 mb-1">
-                        <span>顯示個別圓盤切片 (Disc)</span>
+                        <span id="lang-slice-disc">顯示個別圓盤切片 (Disc)</span>
                         <span id="sliceValue" class="text-yellow-800">x = 2.0</span>
                     </div>
                     <input type="range" id="sliceSlider" min="0" max="400" value="200" class="w-full">
@@ -62,21 +70,21 @@
 
             <!-- 視覺切換 -->
             <div class="space-y-4">
-                <h2 class="text-xl font-black text-gray-800 border-l-4 border-green-600 pl-2">顯示選項</h2>
+                <h2 id="lang-disp-title" class="text-xl font-black text-gray-800 border-l-4 border-green-600 pl-2">顯示選項</h2>
                 <div class="grid grid-cols-2 gap-2">
-                    <button id="toggleMesh" onclick="toggleMesh()" class="px-3 py-2 bg-blue-600 text-white rounded text-xs font-bold shadow hover:bg-blue-700 transition">隱藏/顯示立體</button>
-                    <button id="toggleDisc" onclick="toggleDisc()" class="px-3 py-2 bg-yellow-500 text-white rounded text-xs font-bold shadow hover:bg-yellow-600 transition">隱藏/顯示圓盤</button>
+                    <button id="lang-btn-mesh" onclick="toggleMesh()" class="px-3 py-2 bg-blue-600 text-white rounded text-xs font-bold shadow hover:bg-blue-700 transition">隱藏/顯示立體</button>
+                    <button id="lang-btn-disc" onclick="toggleDisc()" class="px-3 py-2 bg-yellow-500 text-white rounded text-xs font-bold shadow hover:bg-yellow-600 transition">隱藏/顯示圓盤</button>
                 </div>
-                <p class="text-xs text-gray-500 leading-relaxed italic">
+                <p id="lang-hint" class="text-xs text-gray-500 leading-relaxed italic">
                     提示：電腦使用滾輪縮放；iPad 使用雙指捏合 (Pinch) 縮放。
                 </p>
             </div>
 
             <!-- 公式 -->
             <div class="bg-slate-900 p-4 rounded-xl text-white shadow-inner flex flex-col justify-center">
-                <h2 class="font-bold text-blue-400 mb-2 border-b border-slate-700 pb-1 text-sm">數學原理</h2>
+                <h2 id="lang-math-title" class="font-bold text-blue-400 mb-2 border-b border-slate-700 pb-1 text-sm">數學原理</h2>
                 <div class="text-xs space-y-2">
-                    <p>體積即為所有圓盤面積的無限累加：</p>
+                    <p id="lang-math-desc">體積即為所有圓盤面積的無限累加：</p>
                     <div class="bg-slate-800 p-2 rounded text-center my-2">
                         <span class="text-lg math-font text-yellow-400">dV = π[f(x)]² dx</span>
                     </div>
@@ -95,6 +103,62 @@
         let currentFuncType = 'linear';
         let showMesh = true;
         let showDisc = true;
+        let currentLang = 'zh';
+
+        const i18n = {
+            zh: {
+                dataTitle: "當前切片數據 (Disc Info)",
+                pos: "位置",
+                rad: "半徑",
+                area: "面積",
+                paramTitle: "參數控制",
+                funcSelect: "函數選擇",
+                rotAngle: "旋轉角度 (0° - 360°)",
+                sliceDisc: "顯示個別圓盤切片 (Disc)",
+                dispTitle: "顯示選項",
+                btnMesh: "隱藏/顯示立體",
+                btnDisc: "隱藏/顯示圓盤",
+                hint: "提示：電腦使用滾輪縮放；iPad 使用雙指捏合 (Pinch) 縮放。",
+                mathTitle: "數學原理",
+                mathDesc: "體積即為所有圓盤面積的無限累加："
+            },
+            en: {
+                dataTitle: "Current Slice Data (Disc Info)",
+                pos: "Position",
+                rad: "Radius",
+                area: "Area",
+                paramTitle: "Parameter Control",
+                funcSelect: "Select Function",
+                rotAngle: "Rotation Angle (0° - 360°)",
+                sliceDisc: "Show Individual Slice (Disc)",
+                dispTitle: "Display Options",
+                btnMesh: "Toggle Solid Mesh",
+                btnDisc: "Toggle Disc Slice",
+                hint: "Hint: Use mouse wheel to zoom on PC; Use pinch gesture to zoom on iPad.",
+                mathTitle: "Mathematical Principle",
+                mathDesc: "The volume is the infinite sum of the areas of all discs:"
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            const t = i18n[currentLang];
+            
+            document.getElementById('lang-data-title').innerText = t.dataTitle;
+            document.getElementById('lang-pos').innerText = t.pos;
+            document.getElementById('lang-rad').innerText = t.rad;
+            document.getElementById('lang-area').innerText = t.area;
+            document.getElementById('lang-param-title').innerText = t.paramTitle;
+            document.getElementById('lang-func-select').innerText = t.funcSelect;
+            document.getElementById('lang-rot-angle').innerText = t.rotAngle;
+            document.getElementById('lang-slice-disc').innerText = t.sliceDisc;
+            document.getElementById('lang-disp-title').innerText = t.dispTitle;
+            document.getElementById('lang-btn-mesh').innerText = t.btnMesh;
+            document.getElementById('lang-btn-disc').innerText = t.btnDisc;
+            document.getElementById('lang-hint').innerText = t.hint;
+            document.getElementById('lang-math-title').innerText = t.mathTitle;
+            document.getElementById('lang-math-desc').innerText = t.mathDesc;
+        }
 
         function init() {
             scene = new THREE.Scene();
@@ -102,7 +166,7 @@
             
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.6), 0.1, 1000);
             camera.position.set(7, 5, 9);
-            camera.lookAt(2, 0, 0);
+            camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
@@ -130,8 +194,19 @@
                 case 'linear': return 0.5 * x;
                 case 'sqrt': return Math.sqrt(x);
                 case 'sin': return Math.sin(x) + 1;
+                case 'sqrt2x1': return Math.sqrt(2 * x + 1);
+                case 'invSqrt': return 1 / Math.sqrt(Math.max(0.001, x));
+                case 'ellipse': 
+                    const val = 4 - (4/9) * x * x;
+                    return Math.sqrt(Math.max(0, val));
                 default: return 0.5 * x;
             }
+        }
+
+        function getXBounds() {
+            if (currentFuncType === 'invSqrt') return { min: 1, max: 4 };
+            if (currentFuncType === 'ellipse') return { min: -3, max: 3 };
+            return { min: 0, max: 4 };
         }
 
         function updateGeometry() {
@@ -139,12 +214,12 @@
             if (rotationMesh) scene.remove(rotationMesh);
             if (discMesh) scene.remove(discMesh);
 
-            const segments = 64;
-            const xRange = 4;
+            const segments = 128; 
+            const bounds = getXBounds();
             const points = [];
 
             for (let i = 0; i <= segments; i++) {
-                let x = (i / segments) * xRange;
+                let x = bounds.min + (i / segments) * (bounds.max - bounds.min);
                 points.push(new THREE.Vector3(x, f(x), 0));
             }
             const curveGeom = new THREE.BufferGeometry().setFromPoints(points);
@@ -154,7 +229,7 @@
             if (showMesh) {
                 const lathePoints = [];
                 for (let i = 0; i <= segments; i++) {
-                    let x = (i / segments) * xRange;
+                    let x = bounds.min + (i / segments) * (bounds.max - bounds.min);
                     lathePoints.push(new THREE.Vector2(f(x), x));
                 }
                 
@@ -175,8 +250,10 @@
                 scene.add(rotationMesh);
             }
 
+            let adjustedSlicePos = Math.max(bounds.min, Math.min(bounds.max, slicePos));
+
             if (showDisc) {
-                const r = f(slicePos);
+                const r = f(adjustedSlicePos);
                 const discGeom = new THREE.CylinderGeometry(r, r, 0.05, 64);
                 const discMat = new THREE.MeshPhongMaterial({
                     color: 0xfacc15,
@@ -185,11 +262,11 @@
                 });
                 discMesh = new THREE.Mesh(discGeom, discMat);
                 discMesh.rotation.z = Math.PI / 2;
-                discMesh.position.x = slicePos;
+                discMesh.position.x = adjustedSlicePos;
                 scene.add(discMesh);
 
                 document.getElementById('data-panel').style.display = 'block';
-                document.getElementById('data-x').innerText = slicePos.toFixed(2);
+                document.getElementById('data-x').innerText = adjustedSlicePos.toFixed(2);
                 document.getElementById('data-r').innerText = r.toFixed(2);
                 document.getElementById('data-a').innerText = (Math.PI * r * r).toFixed(2);
             } else {
@@ -225,7 +302,7 @@
                 camera.position.x = r * Math.sin(phi) * Math.sin(theta);
                 camera.position.y = r * Math.cos(phi);
                 camera.position.z = r * Math.sin(phi) * Math.cos(theta);
-                camera.lookAt(2, 0, 0);
+                camera.lookAt(0, 0, 0);
 
                 prevX = x;
                 prevY = y;
@@ -236,7 +313,7 @@
                 const newR = Math.max(2, Math.min(30, r + delta * 0.01));
                 const factor = newR / r;
                 camera.position.multiplyScalar(factor);
-                camera.lookAt(2, 0, 0);
+                camera.lookAt(0, 0, 0);
             };
 
             const onEnd = () => { 
@@ -246,7 +323,6 @@
 
             const container = document.getElementById('canvas-container');
 
-            // Mouse Events
             container.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
             window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
             window.addEventListener('mouseup', onEnd);
@@ -255,12 +331,11 @@
                 onZoom(e.deltaY);
             }, { passive: false });
 
-            // Touch Events (iPad)
             container.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 1) {
                     onStart(e.touches[0].clientX, e.touches[0].clientY);
                 } else if (e.touches.length === 2) {
-                    isInteracting = false; // Stop rotation during pinch
+                    isInteracting = false;
                     const dx = e.touches[0].clientX - e.touches[1].clientX;
                     const dy = e.touches[0].clientY - e.touches[1].clientY;
                     initialPinchDist = Math.sqrt(dx * dx + dy * dy);
@@ -276,14 +351,11 @@
                     const dx = e.touches[0].clientX - e.touches[1].clientX;
                     const dy = e.touches[0].clientY - e.touches[1].clientY;
                     const currentDist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    // Inverse mapping: pinch apart (large dist) means smaller radius (zoom in)
                     const zoomFactor = initialPinchDist / currentDist;
                     const newR = Math.max(2, Math.min(30, initialCameraR * zoomFactor));
                     const currentR = camera.position.length();
                     camera.position.multiplyScalar(newR / currentR);
-                    camera.lookAt(2, 0, 0);
-                    
+                    camera.lookAt(0, 0, 0);
                     e.preventDefault();
                 }
             }, { passive: false });
@@ -293,6 +365,21 @@
 
         function changeFunc(type) {
             currentFuncType = type;
+            const bounds = getXBounds();
+            const sliceSlider = document.getElementById('sliceSlider');
+            sliceSlider.min = bounds.min * 100;
+            sliceSlider.max = bounds.max * 100;
+            
+            if (currentFuncType === 'ellipse') {
+                slicePos = 0;
+            } else if (currentFuncType === 'invSqrt') {
+                slicePos = 2.5;
+            } else {
+                slicePos = 2.0;
+            }
+            sliceSlider.value = slicePos * 100;
+            document.getElementById('sliceValue').innerText = 'x = ' + slicePos.toFixed(1);
+            
             updateGeometry();
         }
 
