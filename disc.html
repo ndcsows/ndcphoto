@@ -45,10 +45,10 @@
                 
                 <div>
                     <div class="flex justify-between text-xs font-bold text-gray-500 mb-1">
-                        <span>整體旋轉角度</span>
-                        <span id="angleValue" class="text-blue-600">180°</span>
+                        <span>旋轉角度 (0° - 360°)</span>
+                        <span id="angleValue" class="text-blue-600">0°</span>
                     </div>
-                    <input type="range" id="angleSlider" min="0" max="360" value="180" class="w-full">
+                    <input type="range" id="angleSlider" min="270" max="630" value="270" class="w-full">
                 </div>
 
                 <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
@@ -68,7 +68,7 @@
                     <button id="toggleDisc" onclick="toggleDisc()" class="px-3 py-2 bg-yellow-500 text-white rounded text-xs font-bold shadow hover:bg-yellow-600 transition">隱藏/顯示圓盤</button>
                 </div>
                 <p class="text-xs text-gray-500 leading-relaxed italic">
-                    提示：在 iPad 上可用單指滑動旋轉視角。
+                    提示：電腦使用滾輪縮放；iPad 使用雙指捏合 (Pinch) 縮放。
                 </p>
             </div>
 
@@ -90,7 +90,7 @@
 
     <script>
         let scene, camera, renderer, curveLine, rotationMesh, discMesh;
-        let angle = 180;
+        let angle = 270;
         let slicePos = 2.0;
         let currentFuncType = 'linear';
         let showMesh = true;
@@ -151,13 +151,18 @@
             curveLine = new THREE.Line(curveGeom, new THREE.LineBasicMaterial({ color: 0x60a5fa, linewidth: 4 }));
             scene.add(curveLine);
 
-            if (showMesh && angle > 0) {
+            if (showMesh) {
                 const lathePoints = [];
                 for (let i = 0; i <= segments; i++) {
                     let x = (i / segments) * xRange;
                     lathePoints.push(new THREE.Vector2(f(x), x));
                 }
-                const latheGeom = new THREE.LatheGeometry(lathePoints, 64, 0, (angle / 360) * Math.PI * 2);
+                
+                const sweepAngle = ((angle - 270) / 360) * Math.PI * 2;
+                const startAngle = (270 / 360) * Math.PI * 2;
+
+                const latheGeom = new THREE.LatheGeometry(lathePoints, 64, startAngle, sweepAngle);
+                
                 const latheMat = new THREE.MeshPhongMaterial({
                     color: 0x3b82f6,
                     side: THREE.DoubleSide,
@@ -195,6 +200,8 @@
         function setupControls() {
             let isInteracting = false;
             let prevX = 0, prevY = 0;
+            let initialPinchDist = 0;
+            let initialCameraR = 0;
 
             const onStart = (x, y) => {
                 isInteracting = true;
@@ -224,7 +231,18 @@
                 prevY = y;
             };
 
-            const onEnd = () => { isInteracting = false; };
+            const onZoom = (delta) => {
+                const r = camera.position.length();
+                const newR = Math.max(2, Math.min(30, r + delta * 0.01));
+                const factor = newR / r;
+                camera.position.multiplyScalar(factor);
+                camera.lookAt(2, 0, 0);
+            };
+
+            const onEnd = () => { 
+                isInteracting = false; 
+                initialPinchDist = 0;
+            };
 
             const container = document.getElementById('canvas-container');
 
@@ -232,18 +250,40 @@
             container.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
             window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
             window.addEventListener('mouseup', onEnd);
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                onZoom(e.deltaY);
+            }, { passive: false });
 
-            // Touch Events (For iPad/Mobile)
+            // Touch Events (iPad)
             container.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 1) {
                     onStart(e.touches[0].clientX, e.touches[0].clientY);
+                } else if (e.touches.length === 2) {
+                    isInteracting = false; // Stop rotation during pinch
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    initialPinchDist = Math.sqrt(dx * dx + dy * dy);
+                    initialCameraR = camera.position.length();
                 }
             }, { passive: false });
 
             window.addEventListener('touchmove', (e) => {
-                if (isInteracting && e.touches.length === 1) {
+                if (e.touches.length === 1 && isInteracting) {
                     onMove(e.touches[0].clientX, e.touches[0].clientY);
-                    // Prevent scrolling while rotating the 3D model
+                    e.preventDefault();
+                } else if (e.touches.length === 2 && initialPinchDist > 0) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const currentDist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Inverse mapping: pinch apart (large dist) means smaller radius (zoom in)
+                    const zoomFactor = initialPinchDist / currentDist;
+                    const newR = Math.max(2, Math.min(30, initialCameraR * zoomFactor));
+                    const currentR = camera.position.length();
+                    camera.position.multiplyScalar(newR / currentR);
+                    camera.lookAt(2, 0, 0);
+                    
                     e.preventDefault();
                 }
             }, { passive: false });
@@ -273,7 +313,7 @@
 
         document.getElementById('angleSlider').addEventListener('input', (e) => {
             angle = parseInt(e.target.value);
-            document.getElementById('angleValue').innerText = angle + '°';
+            document.getElementById('angleValue').innerText = (angle - 270) + '°';
             updateGeometry();
         });
 
