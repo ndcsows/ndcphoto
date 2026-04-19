@@ -8,10 +8,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; font-family: -apple-system, sans-serif; touch-action: none; }
-        #canvas-container { width: 100%; height: 60vh; background: #0f172a; cursor: move; touch-action: none; }
-        .control-panel { height: 40vh; overflow-y: auto; padding: 15px; background: white; border-top: 2px solid #3b82f6; -webkit-overflow-scrolling: touch; }
+        #canvas-container { width: 100%; height: 55vh; background: #0f172a; cursor: move; touch-action: none; }
+        .control-panel { height: 45vh; overflow-y: auto; padding: 15px; background: white; border-top: 2px solid #3b82f6; -webkit-overflow-scrolling: touch; }
         .math-font { font-family: 'Times New Roman', serif; font-style: italic; }
-        input[type=range] { accent-color: #3b82f6; height: 1.5rem; }
+        input[type=range] { accent-color: #3b82f6; height: 1.2rem; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -36,11 +36,11 @@
     <div class="control-panel shadow-2xl">
         <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- 參數調整 -->
-            <div class="space-y-4">
-                <h1 id="lang-param-title" class="text-xl font-black text-gray-800 border-l-4 border-blue-600 pl-2">參數控制</h1>
+            <div class="space-y-3">
+                <h1 id="lang-param-title" class="text-lg font-black text-gray-800 border-l-4 border-blue-600 pl-2">參數控制</h1>
                 
                 <div>
-                    <label id="lang-func-select" class="block text-xs font-bold text-gray-500 mb-1">函數選擇</label>
+                    <label id="lang-func-select" class="block text-[10px] font-bold text-gray-500 mb-1 uppercase">函數選擇</label>
                     <select id="funcSelect" onchange="changeFunc(this.value)" class="w-full p-2 border rounded bg-gray-50 text-sm">
                         <option value="linear">y = 0.5x</option>
                         <option value="sqrt">y = √x</option>
@@ -52,32 +52,39 @@
                 </div>
                 
                 <div>
-                    <div class="flex justify-between text-xs font-bold text-gray-500 mb-1">
+                    <div class="flex justify-between text-[10px] font-bold text-gray-500 mb-1 uppercase">
                         <span id="lang-rot-angle">旋轉角度 (0° - 360°)</span>
                         <span id="angleValue" class="text-blue-600">0°</span>
                     </div>
                     <input type="range" id="angleSlider" min="270" max="630" value="270" class="w-full">
                 </div>
 
-                <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <div class="flex justify-between text-xs font-bold text-yellow-700 mb-1">
-                        <span id="lang-slice-disc">顯示個別圓盤切片 (Disc)</span>
-                        <span id="sliceValue" class="text-yellow-800">x = 2.0</span>
+                <!-- 圓盤數量控制 (n) - 初始設定為隱藏且值為 2 -->
+                <div id="nControl" class="p-2 bg-blue-50 rounded-lg border border-blue-100 hidden">
+                    <div class="flex justify-between text-[10px] font-bold text-blue-700 mb-1 uppercase">
+                        <span id="lang-riemann">圓盤數量 (n)</span>
+                        <span id="nValue" class="text-blue-800">2</span>
                     </div>
-                    <input type="range" id="sliceSlider" min="0" max="400" value="200" class="w-full">
+                    <input type="range" id="nSlider" min="2" max="100" value="2" class="w-full">
                 </div>
             </div>
 
             <!-- 視覺切換 -->
             <div class="space-y-4">
-                <h2 id="lang-disp-title" class="text-xl font-black text-gray-800 border-l-4 border-green-600 pl-2">顯示選項</h2>
-                <div class="grid grid-cols-2 gap-2">
-                    <button id="lang-btn-mesh" onclick="toggleMesh()" class="px-3 py-2 bg-blue-600 text-white rounded text-xs font-bold shadow hover:bg-blue-700 transition">隱藏/顯示立體</button>
-                    <button id="lang-btn-disc" onclick="toggleDisc()" class="px-3 py-2 bg-yellow-500 text-white rounded text-xs font-bold shadow hover:bg-yellow-600 transition">隱藏/顯示圓盤</button>
+                <h2 id="lang-disp-title" class="text-lg font-black text-gray-800 border-l-4 border-green-600 pl-2">顯示選項</h2>
+                <div class="grid grid-cols-1 gap-2">
+                    <button id="lang-btn-mesh" onclick="toggleMesh()" class="px-3 py-2 bg-blue-600 text-white rounded text-xs font-bold shadow hover:bg-blue-700 transition">顯示/隱藏平滑立體 (Solid)</button>
+                    <button id="lang-btn-riemann" onclick="toggleRiemann()" class="px-3 py-2 bg-indigo-500 text-white rounded text-xs font-bold shadow hover:bg-indigo-600 transition">顯示/隱藏離散圓盤 (Riemann Sum)</button>
+                    <button id="lang-btn-disc" onclick="toggleDisc()" class="px-3 py-2 bg-yellow-500 text-white rounded text-xs font-bold shadow hover:bg-yellow-600 transition">顯示/隱藏單個切片 (Single Disc)</button>
                 </div>
-                <p id="lang-hint" class="text-xs text-gray-500 leading-relaxed italic">
-                    提示：電腦使用滾輪縮放；iPad 使用雙指捏合 (Pinch) 縮放。
-                </p>
+                
+                <div id="sliceControl" class="p-2 bg-yellow-50 rounded-lg border border-yellow-200 mt-2 hidden">
+                    <div class="flex justify-between text-[10px] font-bold text-yellow-700 mb-1 uppercase">
+                        <span id="lang-slice-disc">切片位置 (x)</span>
+                        <span id="sliceValue" class="text-yellow-800">x = 2.0</span>
+                    </div>
+                    <input type="range" id="sliceSlider" min="0" max="400" value="200" class="w-full">
+                </div>
             </div>
 
             <!-- 公式 -->
@@ -97,12 +104,15 @@
     </div>
 
     <script>
-        let scene, camera, renderer, curveLine, rotationMesh, discMesh;
+        let scene, camera, renderer, curveLine, rotationMesh, discMesh, riemannGroup;
+        let xLabel, yLabel;
         let angle = 270;
         let slicePos = 2.0;
+        let numDiscs = 2; // 預設值改為 2
         let currentFuncType = 'linear';
         let showMesh = true;
-        let showDisc = true;
+        let showDisc = false;
+        let showRiemann = false; // 預設不顯示離散圓盤
         let currentLang = 'zh';
 
         const i18n = {
@@ -114,13 +124,16 @@
                 paramTitle: "參數控制",
                 funcSelect: "函數選擇",
                 rotAngle: "旋轉角度 (0° - 360°)",
-                sliceDisc: "顯示個別圓盤切片 (Disc)",
+                sliceDisc: "切片位置 (x)",
+                riemann: "圓盤數量 (n)",
                 dispTitle: "顯示選項",
-                btnMesh: "隱藏/顯示立體",
-                btnDisc: "隱藏/顯示圓盤",
-                hint: "提示：電腦使用滾輪縮放；iPad 使用雙指捏合 (Pinch) 縮放。",
+                btnMesh: "顯示/隱藏平滑立體 (Solid)",
+                btnDisc: "顯示/隱藏單個切片 (Single Disc)",
+                btnRiemann: "顯示/隱藏離散圓盤 (Riemann Sum)",
                 mathTitle: "數學原理",
-                mathDesc: "體積即為所有圓盤面積的無限累加："
+                mathDesc: "體積即為所有圓盤面積的無限累加：",
+                xAxis: "x",
+                yAxis: "y"
             },
             en: {
                 dataTitle: "Current Slice Data (Disc Info)",
@@ -130,20 +143,40 @@
                 paramTitle: "Parameter Control",
                 funcSelect: "Select Function",
                 rotAngle: "Rotation Angle (0° - 360°)",
-                sliceDisc: "Show Individual Slice (Disc)",
+                sliceDisc: "Slice Position (x)",
+                riemann: "Number of Discs (n)",
                 dispTitle: "Display Options",
-                btnMesh: "Toggle Solid Mesh",
-                btnDisc: "Toggle Disc Slice",
-                hint: "Hint: Use mouse wheel to zoom on PC; Use pinch gesture to zoom on iPad.",
+                btnMesh: "Toggle Smooth Solid",
+                btnDisc: "Toggle Single Disc",
+                btnRiemann: "Toggle Riemann Sum Discs",
                 mathTitle: "Mathematical Principle",
-                mathDesc: "The volume is the infinite sum of the areas of all discs:"
+                mathDesc: "The volume is the infinite sum of the areas of all discs:",
+                xAxis: "x",
+                yAxis: "y"
             }
         };
+
+        function makeTextSprite(message, color) {
+            const canvas = document.createElement('canvas');
+            const size = 128;
+            canvas.width = size;
+            canvas.height = size;
+            const context = canvas.getContext('2d');
+            context.font = "italic Bold 48px 'Times New Roman', serif";
+            context.fillStyle = color;
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.fillText(message, size / 2, size / 2);
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(1.2, 1.2, 1);
+            return sprite;
+        }
 
         function toggleLanguage() {
             currentLang = currentLang === 'zh' ? 'en' : 'zh';
             const t = i18n[currentLang];
-            
             document.getElementById('lang-data-title').innerText = t.dataTitle;
             document.getElementById('lang-pos').innerText = t.pos;
             document.getElementById('lang-rad').innerText = t.rad;
@@ -152,24 +185,37 @@
             document.getElementById('lang-func-select').innerText = t.funcSelect;
             document.getElementById('lang-rot-angle').innerText = t.rotAngle;
             document.getElementById('lang-slice-disc').innerText = t.sliceDisc;
+            document.getElementById('lang-riemann').innerText = t.riemann;
             document.getElementById('lang-disp-title').innerText = t.dispTitle;
             document.getElementById('lang-btn-mesh').innerText = t.btnMesh;
             document.getElementById('lang-btn-disc').innerText = t.btnDisc;
-            document.getElementById('lang-hint').innerText = t.hint;
+            document.getElementById('lang-btn-riemann').innerText = t.btnRiemann;
             document.getElementById('lang-math-title').innerText = t.mathTitle;
             document.getElementById('lang-math-desc').innerText = t.mathDesc;
+            updateAxisLabels();
+        }
+
+        function updateAxisLabels() {
+            const t = i18n[currentLang];
+            if (xLabel) scene.remove(xLabel);
+            if (yLabel) scene.remove(yLabel);
+            xLabel = makeTextSprite(t.xAxis, "#ef4444");
+            xLabel.position.set(6.5, 0, 0);
+            yLabel = makeTextSprite(t.yAxis, "#22c55e");
+            yLabel.position.set(0, 6.5, 0);
+            scene.add(xLabel);
+            scene.add(yLabel);
         }
 
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0f172a);
-            
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.6), 0.1, 1000);
-            camera.position.set(7, 5, 9);
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.55), 0.1, 1000);
+            camera.position.set(8, 6, 10);
             camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.55);
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.6));
@@ -177,12 +223,20 @@
             pl.position.set(5, 10, 5);
             scene.add(pl);
 
-            const axesHelper = new THREE.AxesHelper(6);
-            scene.add(axesHelper);
+            const lineMatX = new THREE.LineBasicMaterial({ color: 0xef4444 });
+            const lineGeomX = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(6,0,0)]);
+            scene.add(new THREE.Line(lineGeomX, lineMatX));
+            const lineMatY = new THREE.LineBasicMaterial({ color: 0x22c55e });
+            const lineGeomY = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,6,0)]);
+            scene.add(new THREE.Line(lineGeomY, lineMatY));
 
+            updateAxisLabels();
             const gridHelper = new THREE.GridHelper(10, 10, 0x334155, 0x1e293b);
             gridHelper.rotation.x = Math.PI / 2;
             scene.add(gridHelper);
+
+            riemannGroup = new THREE.Group();
+            scene.add(riemannGroup);
 
             updateGeometry();
             setupControls();
@@ -213,18 +267,20 @@
             if (curveLine) scene.remove(curveLine);
             if (rotationMesh) scene.remove(rotationMesh);
             if (discMesh) scene.remove(discMesh);
+            while(riemannGroup.children.length > 0) riemannGroup.remove(riemannGroup.children[0]);
 
-            const segments = 128; 
             const bounds = getXBounds();
             const points = [];
-
+            const segments = 128;
             for (let i = 0; i <= segments; i++) {
                 let x = bounds.min + (i / segments) * (bounds.max - bounds.min);
                 points.push(new THREE.Vector3(x, f(x), 0));
             }
-            const curveGeom = new THREE.BufferGeometry().setFromPoints(points);
-            curveLine = new THREE.Line(curveGeom, new THREE.LineBasicMaterial({ color: 0x60a5fa, linewidth: 4 }));
+            curveLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color: 0x60a5fa, linewidth: 4 }));
             scene.add(curveLine);
+
+            const sweepAngle = ((angle - 270) / 360) * Math.PI * 2;
+            const startAngle = (270 / 360) * Math.PI * 2;
 
             if (showMesh) {
                 const lathePoints = [];
@@ -232,171 +288,106 @@
                     let x = bounds.min + (i / segments) * (bounds.max - bounds.min);
                     lathePoints.push(new THREE.Vector2(f(x), x));
                 }
-                
-                const sweepAngle = ((angle - 270) / 360) * Math.PI * 2;
-                const startAngle = (270 / 360) * Math.PI * 2;
-
                 const latheGeom = new THREE.LatheGeometry(lathePoints, 64, startAngle, sweepAngle);
-                
-                const latheMat = new THREE.MeshPhongMaterial({
-                    color: 0x3b82f6,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                    opacity: 0.4,
-                    shininess: 30
-                });
-                rotationMesh = new THREE.Mesh(latheGeom, latheMat);
+                rotationMesh = new THREE.Mesh(latheGeom, new THREE.MeshPhongMaterial({
+                    color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.35, shininess: 30
+                }));
                 rotationMesh.rotation.z = -Math.PI / 2;
                 scene.add(rotationMesh);
             }
 
-            let adjustedSlicePos = Math.max(bounds.min, Math.min(bounds.max, slicePos));
+            if (showRiemann) {
+                const dx = (bounds.max - bounds.min) / numDiscs;
+                for (let i = 0; i < numDiscs; i++) {
+                    let x_mid = bounds.min + (i + 0.5) * dx;
+                    let r = f(x_mid);
+                    if (r <= 0.01) continue;
+                    
+                    const discGeom = new THREE.CylinderGeometry(r, r, dx, 32, 1, false, startAngle, sweepAngle);
+                    const discMat = new THREE.MeshPhongMaterial({
+                        color: 0x818cf8, transparent: true, opacity: 0.7, side: THREE.DoubleSide
+                    });
+                    const d = new THREE.Mesh(discGeom, discMat);
+                    d.rotation.z = Math.PI / 2;
+                    d.position.x = x_mid;
+                    riemannGroup.add(d);
+                    
+                    const edges = new THREE.EdgesGeometry(discGeom);
+                    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x312e81 }));
+                    line.rotation.z = Math.PI / 2;
+                    line.position.x = x_mid;
+                    riemannGroup.add(line);
+                }
+                // 控制面板顯示
+                document.getElementById('nControl').classList.remove('hidden');
+            } else {
+                // 控制面板隱藏
+                document.getElementById('nControl').classList.add('hidden');
+            }
 
             if (showDisc) {
-                const r = f(adjustedSlicePos);
-                const discGeom = new THREE.CylinderGeometry(r, r, 0.05, 64);
-                const discMat = new THREE.MeshPhongMaterial({
-                    color: 0xfacc15,
-                    emissive: 0x422006,
-                    side: THREE.DoubleSide
-                });
-                discMesh = new THREE.Mesh(discGeom, discMat);
+                const adjX = Math.max(bounds.min, Math.min(bounds.max, slicePos));
+                const r = f(adjX);
+                const discGeom = new THREE.CylinderGeometry(r, r, 0.08, 48, 1, false, startAngle, sweepAngle);
+                discMesh = new THREE.Mesh(discGeom, new THREE.MeshPhongMaterial({ color: 0xfacc15, emissive: 0x422006, side: THREE.DoubleSide }));
                 discMesh.rotation.z = Math.PI / 2;
-                discMesh.position.x = adjustedSlicePos;
+                discMesh.position.x = adjX;
                 scene.add(discMesh);
 
                 document.getElementById('data-panel').style.display = 'block';
-                document.getElementById('data-x').innerText = adjustedSlicePos.toFixed(2);
+                document.getElementById('data-x').innerText = adjX.toFixed(2);
                 document.getElementById('data-r').innerText = r.toFixed(2);
                 document.getElementById('data-a').innerText = (Math.PI * r * r).toFixed(2);
+                document.getElementById('sliceControl').classList.remove('hidden');
             } else {
                 document.getElementById('data-panel').style.display = 'none';
+                document.getElementById('sliceControl').classList.add('hidden');
             }
         }
 
         function setupControls() {
-            let isInteracting = false;
-            let prevX = 0, prevY = 0;
-            let initialPinchDist = 0;
-            let initialCameraR = 0;
-
-            const onStart = (x, y) => {
-                isInteracting = true;
-                prevX = x;
-                prevY = y;
-            };
-
+            let isInteracting = false, prevX = 0, prevY = 0;
             const onMove = (x, y) => {
                 if (!isInteracting) return;
-                const dx = x - prevX;
-                const dy = y - prevY;
-                
+                const dx = x - prevX, dy = y - prevY;
                 const r = camera.position.length();
                 let theta = Math.atan2(camera.position.x, camera.position.z);
                 let phi = Math.acos(camera.position.y / r);
-
-                theta -= dx * 0.007;
-                phi -= dy * 0.007;
+                theta -= dx * 0.007; phi -= dy * 0.007;
                 phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi));
-
-                camera.position.x = r * Math.sin(phi) * Math.sin(theta);
-                camera.position.y = r * Math.cos(phi);
-                camera.position.z = r * Math.sin(phi) * Math.cos(theta);
+                camera.position.set(r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.cos(theta));
                 camera.lookAt(0, 0, 0);
-
-                prevX = x;
-                prevY = y;
+                prevX = x; prevY = y;
             };
-
-            const onZoom = (delta) => {
-                const r = camera.position.length();
-                const newR = Math.max(2, Math.min(30, r + delta * 0.01));
-                const factor = newR / r;
-                camera.position.multiplyScalar(factor);
-                camera.lookAt(0, 0, 0);
-            };
-
-            const onEnd = () => { 
-                isInteracting = false; 
-                initialPinchDist = 0;
-            };
-
             const container = document.getElementById('canvas-container');
-
-            container.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+            container.addEventListener('mousedown', (e) => { isInteracting = true; prevX = e.clientX; prevY = e.clientY; });
             window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
-            window.addEventListener('mouseup', onEnd);
+            window.addEventListener('mouseup', () => isInteracting = false);
+            container.addEventListener('touchstart', (e) => { isInteracting = true; prevX = e.touches[0].clientX; prevY = e.touches[0].clientY; });
+            window.addEventListener('touchmove', (e) => { onMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, {passive: false});
+            window.addEventListener('touchend', () => isInteracting = false);
             container.addEventListener('wheel', (e) => {
                 e.preventDefault();
-                onZoom(e.deltaY);
+                const r = camera.position.length();
+                camera.position.multiplyScalar(Math.max(2, Math.min(30, r + e.deltaY * 0.01)) / r);
+                camera.lookAt(0, 0, 0);
             }, { passive: false });
-
-            container.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 1) {
-                    onStart(e.touches[0].clientX, e.touches[0].clientY);
-                } else if (e.touches.length === 2) {
-                    isInteracting = false;
-                    const dx = e.touches[0].clientX - e.touches[1].clientX;
-                    const dy = e.touches[0].clientY - e.touches[1].clientY;
-                    initialPinchDist = Math.sqrt(dx * dx + dy * dy);
-                    initialCameraR = camera.position.length();
-                }
-            }, { passive: false });
-
-            window.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 1 && isInteracting) {
-                    onMove(e.touches[0].clientX, e.touches[0].clientY);
-                    e.preventDefault();
-                } else if (e.touches.length === 2 && initialPinchDist > 0) {
-                    const dx = e.touches[0].clientX - e.touches[1].clientX;
-                    const dy = e.touches[0].clientY - e.touches[1].clientY;
-                    const currentDist = Math.sqrt(dx * dx + dy * dy);
-                    const zoomFactor = initialPinchDist / currentDist;
-                    const newR = Math.max(2, Math.min(30, initialCameraR * zoomFactor));
-                    const currentR = camera.position.length();
-                    camera.position.multiplyScalar(newR / currentR);
-                    camera.lookAt(0, 0, 0);
-                    e.preventDefault();
-                }
-            }, { passive: false });
-
-            window.addEventListener('touchend', onEnd);
         }
 
         function changeFunc(type) {
             currentFuncType = type;
             const bounds = getXBounds();
             const sliceSlider = document.getElementById('sliceSlider');
-            sliceSlider.min = bounds.min * 100;
-            sliceSlider.max = bounds.max * 100;
-            
-            if (currentFuncType === 'ellipse') {
-                slicePos = 0;
-            } else if (currentFuncType === 'invSqrt') {
-                slicePos = 2.5;
-            } else {
-                slicePos = 2.0;
-            }
+            sliceSlider.min = bounds.min * 100; sliceSlider.max = bounds.max * 100;
+            slicePos = (bounds.min + bounds.max) / 2;
             sliceSlider.value = slicePos * 100;
             document.getElementById('sliceValue').innerText = 'x = ' + slicePos.toFixed(1);
-            
             updateGeometry();
         }
 
-        function toggleMesh() {
-            showMesh = !showMesh;
-            updateGeometry();
-        }
-
-        function toggleDisc() {
-            showDisc = !showDisc;
-            updateGeometry();
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
+        function toggleMesh() { showMesh = !showMesh; updateGeometry(); }
+        function toggleDisc() { showDisc = !showDisc; updateGeometry(); }
+        function toggleRiemann() { showRiemann = !showRiemann; updateGeometry(); }
 
         document.getElementById('angleSlider').addEventListener('input', (e) => {
             angle = parseInt(e.target.value);
@@ -410,12 +401,18 @@
             updateGeometry();
         });
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / (window.innerHeight * 0.6);
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
+        document.getElementById('nSlider').addEventListener('input', (e) => {
+            numDiscs = parseInt(e.target.value);
+            document.getElementById('nValue').innerText = numDiscs;
+            updateGeometry();
         });
 
+        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / (window.innerHeight * 0.55);
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.55);
+        });
         window.onload = init;
     </script>
 </body>
