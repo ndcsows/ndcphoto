@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calculus: Area & Volume Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; touch-action: none; background: #0f172a; height: 100vh; display: flex; flex-direction: column; }
+        #canvas-container { width: 100%; flex: 1; min-height: 50vh; background: #0f172a; cursor: grab; touch-action: none; position: relative; }
+        #canvas-container:active { cursor: grabbing; }
+        .control-panel { 
+            height: auto;
+            max-height: 50vh;
+            overflow-y: auto; 
+            padding: 20px; 
+            background: #ffffff; 
+            border-top: 1px solid #e2e8f0; 
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        .axis-label {
+            position: absolute;
+            color: white;
+            font-weight: bold;
+            font-style: italic;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px black;
+            font-size: 14px;
+        }
+        input[type=range] { accent-color: #3b82f6; width: 100%; height: 2rem; }
+        .mode-btn-active { background-color: #3b82f6; color: white; border-color: #2563eb; }
+        .mode-btn-inactive { background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+    </style>
+</head>
+<body class="bg-slate-900">
+
+    <div id="canvas-container">
+        <div id="label-x" class="axis-label">x</div>
+        <div id="label-y" class="axis-label">y</div>
+        
+        <!-- Info Overlay -->
+        <div id="stats-panel" class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md text-white p-4 rounded-xl border border-slate-700 pointer-events-none z-20">
+            <div id="stat-title" class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">Total Calculation</div>
+            <div class="text-2xl font-mono font-bold" id="stat-value">0.00</div>
+            <div class="text-[10px] text-slate-400 mt-1" id="stat-formula">∫ f(x) dx</div>
+        </div>
+
+        <div class="absolute top-4 right-4 flex gap-2">
+            <button onclick="toggleLanguage()" class="bg-slate-800/80 text-white px-3 py-1 rounded text-xs border border-slate-600">EN/中文</button>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="max-w-5xl mx-auto space-y-6">
+            <!-- Mode Switcher -->
+            <div class="flex p-1 bg-slate-100 rounded-xl border border-slate-200">
+                <button id="mode-area" onclick="setMode('area')" class="flex-1 py-2 rounded-lg text-sm font-bold transition-all mode-btn-active">Area Under Curve (2D)</button>
+                <button id="mode-volume" onclick="setMode('volume')" class="flex-1 py-2 rounded-lg text-sm font-bold transition-all mode-btn-inactive">Solid of Revolution (3D)</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Function Settings -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-1.5 h-5 bg-blue-500 rounded-full"></div>
+                        <h3 class="font-bold text-slate-800 uppercase text-xs tracking-wider" id="lang-func-title">Function & Bounds</h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase" id="lang-select">Choose Function</label>
+                            <select id="funcSelect" onchange="changeFunc(this.value)" class="w-full h-10 px-3 rounded-lg border-2 border-slate-200 outline-none focus:border-blue-500 font-semibold text-sm">
+                                <option value="linear">y = 0.5x + 1</option>
+                                <option value="parabola">y = 0.25x²</option>
+                                <option value="sin">y = sin(x) + 1.5</option>
+                                <option value="sqrt">y = √x</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Lower Bound (a)</label>
+                            <input type="number" id="bound-a" value="0" step="0.5" onchange="updateGeometry()" class="w-full h-10 px-3 rounded-lg border-2 border-slate-200 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Upper Bound (b)</label>
+                            <input type="number" id="bound-b" value="4" step="0.5" onchange="updateGeometry()" class="w-full h-10 px-3 rounded-lg border-2 border-slate-200 text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visualization Controls -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-1.5 h-5 bg-indigo-500 rounded-full"></div>
+                        <h3 class="font-bold text-slate-800 uppercase text-xs tracking-wider" id="lang-viz-title">Visualization</h3>
+                    </div>
+
+                    <div id="riemann-controls">
+                        <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1 uppercase">
+                            <span id="lang-rects">Rectangles / Discs (n)</span>
+                            <span id="n-val" class="text-blue-600">10</span>
+                        </div>
+                        <input type="range" id="n-slider" min="1" max="50" value="10" oninput="handleNChange(this.value)">
+                    </div>
+
+                    <div id="volume-controls" class="hidden">
+                        <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1 uppercase">
+                            <span id="lang-angle">Rotation Angle</span>
+                            <span id="angle-val" class="text-blue-600">360°</span>
+                        </div>
+                        <input type="range" id="angle-slider" min="0" max="360" value="360" oninput="handleAngleChange(this.value)">
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="resetCamera()" class="flex-1 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold uppercase">Reset Camera</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, curveLine, mainMesh, riemannGroup;
+        let mode = 'area'; // 'area' or 'volume'
+        let currentFunc = 'linear';
+        let numSteps = 10;
+        let rotationAngle = 360;
+        let lang = 'en';
+
+        const target = new THREE.Vector3(2, 1, 0);
+
+        function f(x) {
+            switch(currentFunc) {
+                case 'linear': return 0.5 * x + 1;
+                case 'parabola': return 0.25 * x * x;
+                case 'sin': return Math.sin(x) + 1.5;
+                case 'sqrt': return Math.sqrt(Math.max(0, x));
+                default: return x;
+            }
+        }
+
+        // Integration using Midpoint Riemann Sum
+        function calculateIntegrals(a, b, n) {
+            let area = 0;
+            let volume = 0;
+            const dx = (b - a) / n;
+            for(let i = 0; i < n; i++) {
+                let mid = a + (i + 0.5) * dx;
+                let h = f(mid);
+                area += h * dx;
+                volume += Math.PI * Math.pow(h, 2) * dx;
+            }
+            return { area, volume };
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+            
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.5), 0.1, 1000);
+            resetCamera();
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.5);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+            const directional = new THREE.DirectionalLight(0xffffff, 0.8);
+            directional.position.set(5, 10, 7);
+            scene.add(directional);
+
+            // Axes
+            const createAxis = (points, color) => {
+                const mat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.4 });
+                const geom = new THREE.BufferGeometry().setFromPoints(points);
+                scene.add(new THREE.Line(geom, mat));
+            }
+            createAxis([new THREE.Vector3(-2,0,0), new THREE.Vector3(8,0,0)], 0xffffff); // X
+            createAxis([new THREE.Vector3(0,-2,0), new THREE.Vector3(0,8,0)], 0xffffff); // Y
+            
+            riemannGroup = new THREE.Group();
+            scene.add(riemannGroup);
+
+            setupControls();
+            updateGeometry();
+            animate();
+        }
+
+        function setMode(m) {
+            mode = m;
+            document.getElementById('mode-area').className = `flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode==='area'?'mode-btn-active':'mode-btn-inactive'}`;
+            document.getElementById('mode-volume').className = `flex-1 py-2 rounded-lg text-sm font-bold transition-all ${mode==='volume'?'mode-btn-active':'mode-btn-inactive'}`;
+            
+            document.getElementById('volume-controls').classList.toggle('hidden', mode === 'area');
+            
+            if (mode === 'area') {
+                camera.position.set(2, 2, 8);
+                camera.lookAt(2, 2, 0);
+                target.set(2, 2, 0);
+            } else {
+                camera.position.set(6, 5, 8);
+                camera.lookAt(2, 0, 0);
+                target.set(2, 0, 0);
+            }
+            
+            updateGeometry();
+        }
+
+        function updateGeometry() {
+            if (curveLine) scene.remove(curveLine);
+            if (mainMesh) scene.remove(mainMesh);
+            while(riemannGroup.children.length > 0) riemannGroup.remove(riemannGroup.children[0]);
+
+            const a = parseFloat(document.getElementById('bound-a').value);
+            const b = parseFloat(document.getElementById('bound-b').value);
+            const n = numSteps;
+            const dx = (b - a) / n;
+
+            // Curve Line
+            const points = [];
+            for(let x = a - 1; x <= b + 1; x += 0.1) {
+                points.push(new THREE.Vector3(x, f(x), 0));
+            }
+            const curveGeom = new THREE.BufferGeometry().setFromPoints(points);
+            curveLine = new THREE.Line(curveGeom, new THREE.LineBasicMaterial({ color: 0x60a5fa, linewidth: 2 }));
+            scene.add(curveLine);
+
+            const integrals = calculateIntegrals(a, b, n);
+
+            if (mode === 'area') {
+                document.getElementById('stat-title').innerText = lang === 'en' ? "Estimated Area" : "預估面積";
+                document.getElementById('stat-value').innerText = integrals.area.toFixed(4);
+                document.getElementById('stat-formula').innerText = "Σ f(xᵢ) Δx";
+
+                // Riemann Rectangles
+                for(let i = 0; i < n; i++) {
+                    let x_start = a + i * dx;
+                    let h = f(x_start + dx/2);
+                    const rectGeom = new THREE.PlaneGeometry(dx * 0.95, h);
+                    const rectMat = new THREE.MeshPhongMaterial({ color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+                    const rect = new THREE.Mesh(rectGeom, rectMat);
+                    rect.position.set(x_start + dx/2, h/2, 0.01);
+                    riemannGroup.add(rect);
+                }
+            } else {
+                document.getElementById('stat-title').innerText = lang === 'en' ? "Estimated Volume" : "預估體積";
+                document.getElementById('stat-value').innerText = integrals.volume.toFixed(4);
+                document.getElementById('stat-formula').innerText = "Σ π[f(xᵢ)]² Δx";
+
+                const sweep = (rotationAngle / 360) * Math.PI * 2;
+                
+                // Solid Mesh
+                const lathePoints = [];
+                for(let x = a; x <= b; x += (b-a)/40) {
+                    lathePoints.push(new THREE.Vector2(f(x), x));
+                }
+                const latheGeom = new THREE.LatheGeometry(lathePoints, 32, 0, sweep);
+                mainMesh = new THREE.Mesh(latheGeom, new THREE.MeshPhongMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.4, side: THREE.DoubleSide }));
+                mainMesh.rotation.z = -Math.PI / 2;
+                scene.add(mainMesh);
+
+                // Riemann Discs
+                for(let i = 0; i < n; i++) {
+                    let x_mid = a + (i + 0.5) * dx;
+                    let r = f(x_mid);
+                    const discGeom = new THREE.CylinderGeometry(r, r, dx * 0.9, 24, 1, false, 0, sweep);
+                    const discMat = new THREE.MeshPhongMaterial({ color: 0x6366f1, transparent: true, opacity: 0.7 });
+                    const disc = new THREE.Mesh(discGeom, discMat);
+                    disc.rotation.z = Math.PI / 2;
+                    disc.position.x = x_mid;
+                    riemannGroup.add(disc);
+                }
+            }
+        }
+
+        function setupControls() {
+            let isDragging = false;
+            let dragMode = 'none'; // 'rotate', 'pan'
+            let px, py;
+            const container = document.getElementById('canvas-container');
+
+            container.addEventListener('mousedown', e => {
+                isDragging = true;
+                dragMode = e.button === 0 ? 'rotate' : 'pan';
+                px = e.clientX; py = e.clientY;
+            });
+
+            window.addEventListener('mousemove', e => {
+                if (!isDragging) return;
+                const dx = e.clientX - px;
+                const dy = e.clientY - py;
+                
+                const rel = camera.position.clone().sub(target);
+                
+                if (dragMode === 'rotate') {
+                    let theta = Math.atan2(rel.x, rel.z) - dx * 0.01;
+                    let phi = Math.acos(rel.y / rel.length()) - dy * 0.01;
+                    phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi));
+                    const r = rel.length();
+                    camera.position.set(
+                        target.x + r * Math.sin(phi) * Math.sin(theta),
+                        target.y + r * Math.cos(phi),
+                        target.z + r * Math.sin(phi) * Math.cos(theta)
+                    );
+                } else {
+                    const factor = rel.length() * 0.0015;
+                    const vZ = rel.clone().normalize();
+                    const vX = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), vZ).normalize();
+                    const vY = new THREE.Vector3().crossVectors(vZ, vX).normalize();
+                    const move = vX.multiplyScalar(-dx * factor).add(vY.multiplyScalar(dy * factor));
+                    camera.position.add(move);
+                    target.add(move);
+                }
+                camera.lookAt(target);
+                px = e.clientX; py = e.clientY;
+            });
+
+            window.addEventListener('mouseup', () => isDragging = false);
+            container.addEventListener('contextmenu', e => e.preventDefault());
+            container.addEventListener('wheel', e => {
+                const factor = e.deltaY > 0 ? 1.1 : 0.9;
+                const rel = camera.position.clone().sub(target);
+                camera.position.copy(target).add(rel.multiplyScalar(factor));
+            });
+        }
+
+        function handleNChange(v) { numSteps = parseInt(v); document.getElementById('n-val').innerText = v; updateGeometry(); }
+        function handleAngleChange(v) { rotationAngle = parseInt(v); document.getElementById('angle-val').innerText = v + '°'; updateGeometry(); }
+        function changeFunc(v) { currentFunc = v; updateGeometry(); }
+        function resetCamera() { 
+            target.set(2, 1, 0);
+            camera.position.set(5, 4, 8); 
+            camera.lookAt(target); 
+        }
+
+        function toggleLanguage() {
+            lang = lang === 'en' ? 'zh' : 'en';
+            const isEn = lang === 'en';
+            document.getElementById('lang-func-title').innerText = isEn ? "Function & Bounds" : "函數與邊界";
+            document.getElementById('lang-select').innerText = isEn ? "Choose Function" : "選擇函數";
+            document.getElementById('lang-viz-title').innerText = isEn ? "Visualization" : "視覺化控制";
+            document.getElementById('lang-rects').innerText = isEn ? "Rectangles / Discs (n)" : "切割數量 (n)";
+            document.getElementById('lang-angle').innerText = isEn ? "Rotation Angle" : "旋轉角度";
+            document.getElementById('mode-area').innerText = isEn ? "Area Under Curve (2D)" : "曲線下面積 (2D)";
+            document.getElementById('mode-volume').innerText = isEn ? "Solid of Revolution (3D)" : "旋轉體體積 (3D)";
+            updateGeometry();
+        }
+
+        function updateLabels() {
+            const project = (vec, id) => {
+                const v = vec.clone().project(camera);
+                const x = (v.x + 1) * window.innerWidth / 2;
+                const y = -(v.y - 1) * (window.innerHeight * 0.5) / 2;
+                const el = document.getElementById(id);
+                el.style.left = x + 'px'; el.style.top = y + 'px';
+                el.style.display = v.z > 1 ? 'none' : 'block';
+            };
+            project(new THREE.Vector3(8.5, 0, 0), 'label-x');
+            project(new THREE.Vector3(0, 8.5, 0), 'label-y');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
+        window.onresize = () => {
+            camera.aspect = window.innerWidth / (window.innerHeight * 0.5);
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.5);
+        };
+    </script>
+</body>
+</html>
