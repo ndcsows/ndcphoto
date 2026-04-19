@@ -8,7 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; touch-action: none; background: #0f172a; height: 100vh; display: flex; flex-direction: column; }
-        #canvas-container { width: 100%; flex: 1; min-height: 55vh; background: #0f172a; cursor: move; touch-action: none; position: relative; }
+        #canvas-container { width: 100%; flex: 1; min-height: 55vh; background: #0f172a; cursor: grab; touch-action: none; position: relative; }
+        #canvas-container:active { cursor: grabbing; }
         .control-panel { 
             height: auto;
             max-height: 45vh;
@@ -84,7 +85,6 @@
 </head>
 <body class="bg-slate-900">
 
-    <!-- Fixed Language Toggle -->
     <div class="lang-toggle-container">
         <button onclick="toggleLanguage()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-2xl font-bold text-sm border-2 border-white/20 active:scale-95 flex items-center gap-2 transition-all">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
@@ -98,14 +98,12 @@
     <div id="canvas-container">
         <div id="label-x" class="axis-label">x</div>
         <div id="label-y" class="axis-label">y</div>
-
         <div class="zoom-controls">
             <button class="zoom-btn" onclick="zoom(0.85)">+</button>
             <button class="zoom-btn" onclick="zoom(1.15)">−</button>
         </div>
     </div>
 
-    <!-- Data Info Panel -->
     <div id="data-panel" class="absolute top-4 left-4 bg-slate-900/90 text-white p-5 rounded-2xl border border-slate-700 pointer-events-none hidden backdrop-blur-md z-20 shadow-2xl">
         <div id="lang-dataTitle" class="text-xs uppercase tracking-widest text-blue-400 mb-2 font-black">當前切片數據</div>
         <div class="space-y-2 font-mono text-lg">
@@ -126,7 +124,6 @@
 
     <div class="control-panel">
         <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
-            <!-- Params -->
             <div class="space-y-6">
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-6 bg-blue-600 rounded-full"></div>
@@ -164,7 +161,6 @@
                 </div>
             </div>
 
-            <!-- View Options -->
             <div class="space-y-6">
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-6 bg-green-600 rounded-full"></div>
@@ -198,45 +194,27 @@
         let showRiemann = false; 
         let currentLang = 'zh';
 
+        // Camera State for Orbit and Pan
+        const target = new THREE.Vector3(0, 0, 0); // Where the camera looks
+
         const i18n = {
             zh: {
-                dataTitle: "當前切片數據",
-                pos: "位置",
-                rad: "半徑",
-                area: "面積",
-                paramTitle: "參數控制",
-                funcSelect: "函數選擇",
-                rotAngle: "旋轉角度",
-                sliceDisc: "切片位置 (x)",
-                riemannLabel: "圓盤數量 (n)",
-                dispTitle: "顯示選項",
-                btnMesh: "顯示/隱藏立體",
-                btnRiemann: "黎散圓盤",
-                btnDisc: "單個切片",
-                btnLang: "English / 中文"
+                dataTitle: "當前切片數據", pos: "位置", rad: "半徑", area: "面積",
+                paramTitle: "參數控制", funcSelect: "函數選擇", rotAngle: "旋轉角度",
+                sliceDisc: "切片位置 (x)", riemannLabel: "圓盤數量 (n)", dispTitle: "顯示選項",
+                btnMesh: "顯示/隱藏立體", btnRiemann: "黎散圓盤", btnDisc: "單個切片", btnLang: "English / 中文"
             },
             en: {
-                dataTitle: "Slice Information",
-                pos: "Position",
-                rad: "Radius",
-                area: "Area",
-                paramTitle: "Parameter Control",
-                funcSelect: "Function Selection",
-                rotAngle: "Rotation Angle",
-                sliceDisc: "Slice Position (x)",
-                riemannLabel: "Number of Discs (n)",
-                dispTitle: "Display Options",
-                btnMesh: "Show/Hide Solid",
-                btnRiemann: "Riemann Discs",
-                btnDisc: "Single Slice",
-                btnLang: "中文 / English"
+                dataTitle: "Slice Information", pos: "Position", rad: "Radius", area: "Area",
+                paramTitle: "Parameter Control", funcSelect: "Function Selection", rotAngle: "Rotation Angle",
+                sliceDisc: "Slice Position (x)", riemannLabel: "Number of Discs (n)", dispTitle: "Display Options",
+                btnMesh: "Show/Hide Solid", btnRiemann: "Riemann Discs", btnDisc: "Single Slice", btnLang: "中文 / English"
             }
         };
 
         function toggleLanguage() {
             currentLang = (currentLang === 'zh') ? 'en' : 'zh';
             const dict = i18n[currentLang];
-
             document.getElementById('btn-lang-text').innerText = dict.btnLang;
             document.getElementById('lang-dataTitle').innerText = dict.dataTitle;
             document.getElementById('lang-pos').innerText = dict.pos;
@@ -248,11 +226,9 @@
             document.getElementById('lang-sliceDisc').innerText = dict.sliceDisc;
             document.getElementById('lang-riemannLabel').innerText = dict.riemannLabel;
             document.getElementById('lang-dispTitle').innerText = dict.dispTitle;
-            
             document.getElementById('btn-mesh').innerText = dict.btnMesh;
             document.getElementById('btn-riemann').innerText = dict.btnRiemann;
             document.getElementById('btn-disc').innerText = dict.btnDisc;
-
             updateGeometry();
         }
 
@@ -261,7 +237,7 @@
             scene.background = new THREE.Color(0x0f172a);
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.65), 0.1, 1000);
             camera.position.set(10, 8, 12);
-            camera.lookAt(0, 0, 0);
+            camera.lookAt(target);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight * 0.65);
@@ -278,10 +254,10 @@
                 const geom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), end]);
                 scene.add(new THREE.Line(geom, mat));
             };
-            addAxis(new THREE.Vector3(8,0,0), 0xef4444); 
-            addAxis(new THREE.Vector3(0,8,0), 0x22c55e); 
+            addAxis(new THREE.Vector3(12,0,0), 0xef4444); 
+            addAxis(new THREE.Vector3(0,12,0), 0x22c55e); 
             
-            const gridHelper = new THREE.GridHelper(16, 16, 0x334155, 0x1e293b);
+            const gridHelper = new THREE.GridHelper(24, 24, 0x334155, 0x1e293b);
             gridHelper.rotation.x = Math.PI / 2;
             scene.add(gridHelper);
 
@@ -294,16 +270,15 @@
         }
 
         function zoom(factor) {
-            const r = camera.position.length();
-            const newR = r * factor;
-            if (newR > 2 && newR < 50) {
-                camera.position.multiplyScalar(factor);
+            const rel = camera.position.clone().sub(target);
+            const newR = rel.length() * factor;
+            if (newR > 2 && newR < 100) {
+                rel.multiplyScalar(factor);
+                camera.position.copy(target).add(rel);
             }
         }
 
         function updateLabels() {
-            const pos_x = new THREE.Vector3(8.2, 0, 0);
-            const pos_y = new THREE.Vector3(0, 8.2, 0);
             const project = (vec, elId) => {
                 const vector = vec.clone().project(camera);
                 const x = (vector.x + 1) * window.innerWidth / 2;
@@ -312,11 +287,11 @@
                 if (el) {
                     el.style.left = x + 'px';
                     el.style.top = y + 'px';
-                    el.style.display = vector.z > 1 ? 'none' : 'block';
+                    el.style.display = (vector.z > 1 || x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight * 0.65) ? 'none' : 'block';
                 }
             };
-            project(pos_x, 'label-x');
-            project(pos_y, 'label-y');
+            project(new THREE.Vector3(12.2, 0, 0), 'label-x');
+            project(new THREE.Vector3(0, 12.2, 0), 'label-y');
         }
 
         function f(x) {
@@ -363,11 +338,7 @@
                 }
                 const geom = new THREE.LatheGeometry(lPoints, 64, start, sweep);
                 rotationMesh = new THREE.Mesh(geom, new THREE.MeshPhongMaterial({ 
-                    color: 0x3b82f6, 
-                    side: THREE.DoubleSide, 
-                    transparent: true, 
-                    opacity: 0.5,
-                    shininess: 80
+                    color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.5, shininess: 80
                 }));
                 rotationMesh.rotation.z = -Math.PI / 2;
                 scene.add(rotationMesh);
@@ -393,7 +364,6 @@
                 discMesh.rotation.z = Math.PI / 2;
                 discMesh.position.x = slicePos;
                 scene.add(discMesh);
-
                 document.getElementById('data-x').innerText = slicePos.toFixed(2);
                 document.getElementById('data-r').innerText = r.toFixed(2);
                 document.getElementById('data-a').innerText = (Math.PI * r * r).toFixed(2);
@@ -403,11 +373,9 @@
             const updateBtn = (id, active, labelKey) => {
                 const btn = document.getElementById(id);
                 btn.innerText = dict[labelKey];
-                if (active) {
-                    btn.className = "w-full px-4 py-4 rounded-xl text-xs font-black shadow-lg transition-all active:scale-95 bg-blue-600 text-white uppercase tracking-wider";
-                } else {
-                    btn.className = "w-full px-4 py-4 rounded-xl text-xs font-black shadow-md transition-all active:scale-95 bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wider";
-                }
+                btn.className = active 
+                    ? "w-full px-4 py-4 rounded-xl text-xs font-black shadow-lg bg-blue-600 text-white uppercase tracking-wider"
+                    : "w-full px-4 py-4 rounded-xl text-xs font-black shadow-md bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wider";
             };
             updateBtn('btn-mesh', showMesh, 'btnMesh');
             updateBtn('btn-riemann', showRiemann, 'btnRiemann');
@@ -451,47 +419,98 @@
         }
 
         function setupInteractions() {
-            let dragging = false, px = 0, py = 0, initialPinchDist = 0;
+            let mode = 'none'; // 'orbit', 'pan', 'zoom'
+            let px = 0, py = 0, initialPinchDist = 0, initialPinchCenter = { x: 0, y: 0 };
             const container = document.getElementById('canvas-container');
 
-            const move = (nx, ny) => {
-                if(!dragging) return;
+            const onPointerMove = (nx, ny) => {
                 const dx = nx - px, dy = ny - py;
-                const r = camera.position.length();
-                let theta = Math.atan2(camera.position.x, camera.position.z);
-                let phi = Math.acos(camera.position.y / r);
-                theta -= dx * 0.007; phi -= dy * 0.007;
-                phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi));
-                camera.position.set(r*Math.sin(phi)*Math.sin(theta), r*Math.cos(phi), r*Math.sin(phi)*Math.cos(theta));
-                camera.lookAt(0,0,0);
+                if (mode === 'orbit') {
+                    const rel = camera.position.clone().sub(target);
+                    const r = rel.length();
+                    let theta = Math.atan2(rel.x, rel.z);
+                    let phi = Math.acos(rel.y / r);
+                    theta -= dx * 0.007;
+                    phi -= dy * 0.007;
+                    phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi));
+                    camera.position.set(
+                        target.x + r * Math.sin(phi) * Math.sin(theta),
+                        target.y + r * Math.cos(phi),
+                        target.z + r * Math.sin(phi) * Math.cos(theta)
+                    );
+                    camera.lookAt(target);
+                } else if (mode === 'pan') {
+                    const rel = camera.position.clone().sub(target);
+                    const r = rel.length();
+                    // Basis vectors for the camera plane
+                    const vY = new THREE.Vector3(0, 1, 0);
+                    const vZ = rel.clone().normalize();
+                    const vX = new THREE.Vector3().crossVectors(vY, vZ).normalize();
+                    const vUp = new THREE.Vector3().crossVectors(vZ, vX).normalize();
+                    
+                    const factor = r * 0.0015;
+                    const moveX = vX.multiplyScalar(-dx * factor);
+                    const moveY = vUp.multiplyScalar(dy * factor);
+                    
+                    const movement = moveX.add(moveY);
+                    camera.position.add(movement);
+                    target.add(movement);
+                }
                 px = nx; py = ny;
             };
 
-            container.addEventListener('wheel', (e) => { e.preventDefault(); zoom(e.deltaY > 0 ? 1.1 : 0.9); }, { passive: false });
-            container.addEventListener('mousedown', (e) => { dragging = true; px = e.clientX; py = e.clientY; });
-            window.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
-            window.addEventListener('mouseup', () => dragging = false);
+            container.addEventListener('contextmenu', (e) => e.preventDefault());
             
-            container.addEventListener('touchstart', (e) => { 
-                if (e.touches.length === 2) {
-                    dragging = false;
+            container.addEventListener('mousedown', (e) => {
+                px = e.clientX; py = e.clientY;
+                mode = (e.button === 0) ? 'orbit' : 'pan';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (mode !== 'none') onPointerMove(e.clientX, e.clientY);
+            });
+
+            window.addEventListener('mouseup', () => mode = 'none');
+
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                zoom(e.deltaY > 0 ? 1.1 : 0.9);
+            }, { passive: false });
+
+            // Touch support for both Orbit and Pan
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    mode = 'orbit';
+                    px = e.touches[0].clientX;
+                    py = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    mode = 'pan'; // Two fingers to pan
+                    px = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    py = (e.touches[0].clientY + e.touches[1].clientY) / 2;
                     initialPinchDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-                } else {
-                    dragging = true; px = e.touches[0].clientX; py = e.touches[0].clientY; 
                 }
             }, { passive: false });
 
-            window.addEventListener('touchmove', (e) => { 
-                if (e.touches.length === 2) {
-                    const currentDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+            window.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && mode === 'orbit') {
+                    onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+                } else if (e.touches.length === 2) {
+                    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                    
+                    // Do Panning
+                    onPointerMove(cx, cy);
+                    
+                    // Do Zooming
                     if (initialPinchDist > 0) {
-                        zoom(initialPinchDist / currentDist);
-                        initialPinchDist = currentDist;
+                        zoom(initialPinchDist / dist);
+                        initialPinchDist = dist;
                     }
-                } else if(dragging) { move(e.touches[0].clientX, e.touches[0].clientY); } 
+                }
             }, { passive: false });
 
-            window.addEventListener('touchend', () => { dragging = false; initialPinchDist = 0; });
+            window.addEventListener('touchend', () => { mode = 'none'; initialPinchDist = 0; });
         }
 
         function animate() { 
