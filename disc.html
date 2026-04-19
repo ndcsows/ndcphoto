@@ -7,13 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: -apple-system, sans-serif; touch-action: none; background: #0f172a; height: 100vh; display: flex; flex-direction: column; }
-        #canvas-container { width: 100%; flex: 1; min-height: 50vh; background: #0f172a; cursor: move; touch-action: none; position: relative; }
+        body { margin: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; touch-action: none; background: #0f172a; height: 100vh; display: flex; flex-direction: column; }
+        #canvas-container { width: 100%; flex: 1; min-height: 55vh; background: #0f172a; cursor: move; touch-action: none; position: relative; }
         .control-panel { 
             height: auto;
             max-height: 45vh;
             overflow-y: auto; 
-            padding: 20px 24px; 
+            padding: 24px; 
             background: #ffffff; 
             border-top: 1px solid #e2e8f0; 
             -webkit-overflow-scrolling: touch; 
@@ -53,15 +53,13 @@
             font-weight: bold;
             color: #1e293b;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            backdrop-blur: 4px;
         }
 
-        /* Fixed Language Toggle for iPad visibility */
         .lang-toggle-container {
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 9999; /* Ensure it stays on top of everything */
+            z-index: 9999;
         }
 
         input[type=range] { 
@@ -70,7 +68,7 @@
             width: 100%;
         }
         select {
-            height: 48px;
+            height: 52px;
             padding: 0 16px;
             -webkit-appearance: none;
             background-color: white;
@@ -80,12 +78,13 @@
             background-repeat: no-repeat;
             background-position: right 1rem center;
             background-size: 1.2rem;
+            font-weight: 600;
         }
     </style>
 </head>
 <body class="bg-slate-900">
 
-    <!-- Language Toggle Fixed Top Right -->
+    <!-- Fixed Language Toggle -->
     <div class="lang-toggle-container">
         <button onclick="toggleLanguage()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-2xl font-bold text-sm border-2 border-white/20 active:scale-95 flex items-center gap-2 transition-all">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
@@ -97,20 +96,18 @@
     </div>
 
     <div id="canvas-container">
-        <!-- Axis Labels -->
         <div id="label-x" class="axis-label">x</div>
         <div id="label-y" class="axis-label">y</div>
 
-        <!-- Visual Zoom Buttons -->
         <div class="zoom-controls">
             <button class="zoom-btn" onclick="zoom(0.85)">+</button>
             <button class="zoom-btn" onclick="zoom(1.15)">−</button>
         </div>
     </div>
 
-    <!-- Data Panel -->
+    <!-- Data Info Panel -->
     <div id="data-panel" class="absolute top-4 left-4 bg-slate-900/90 text-white p-5 rounded-2xl border border-slate-700 pointer-events-none hidden backdrop-blur-md z-20 shadow-2xl">
-        <div id="lang-data-title" class="text-xs uppercase tracking-widest text-blue-400 mb-2 font-black">當前切片數據</div>
+        <div id="lang-dataTitle" class="text-xs uppercase tracking-widest text-blue-400 mb-2 font-black">當前切片數據</div>
         <div class="space-y-2 font-mono text-lg">
             <div class="flex justify-between gap-4">
                 <span id="lang-pos" class="text-slate-400">位置</span> 
@@ -128,76 +125,63 @@
     </div>
 
     <div class="control-panel">
-        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Parameters -->
-            <div class="space-y-4">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
+            <!-- Params -->
+            <div class="space-y-6">
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-6 bg-blue-600 rounded-full"></div>
-                    <h1 id="lang-param-title" class="text-xl font-black text-slate-800 tracking-tight uppercase">參數控制</h1>
+                    <h1 id="lang-paramTitle" class="text-xl font-black text-slate-800 tracking-tight uppercase">參數控制</h1>
                 </div>
                 
-                <div>
-                    <label id="lang-func-select" class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">函數選擇</label>
-                    <select id="funcSelect" onchange="changeFunc(this.value)" class="w-full shadow-sm outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="linear">y = 0.5x</option>
-                        <option value="sqrt">y = √x</option>
-                        <option value="sin">y = sin(x) + 1</option>
-                        <option value="sqrt2x1">y = √(2x + 1)</option>
-                        <option value="invSqrt">y = 1/√x (x: 1~4)</option>
-                        <option value="ellipse">4x² + 9y² = 36</option>
-                    </select>
-                </div>
-                
-                <div id="angleControlGroup">
-                    <div class="flex justify-between text-xs font-bold text-slate-500 mb-1 uppercase tracking-widest">
-                        <span id="lang-rot-angle">旋轉角度</span>
-                        <span id="angleValue" class="text-blue-600 font-black">0°</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label id="lang-funcSelect" class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">函數選擇</label>
+                        <select id="funcSelect" onchange="changeFunc(this.value)" class="w-full shadow-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="linear">y = 0.5x</option>
+                            <option value="sqrt">y = √x</option>
+                            <option value="sin">y = sin(x) + 1</option>
+                            <option value="sqrt2x1">y = √(2x + 1)</option>
+                            <option value="invSqrt">y = 1/√x (x: 1~4)</option>
+                            <option value="ellipse">4x² + 9y² = 36</option>
+                        </select>
                     </div>
-                    <input type="range" id="angleSlider" min="270" max="630" value="270" oninput="handleAngleInput(this.value)">
-                </div>
-            </div>
-
-            <!-- View Options -->
-            <div class="space-y-4">
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-6 bg-green-600 rounded-full"></div>
-                    <h2 id="lang-disp-title" class="text-xl font-black text-slate-800 tracking-tight uppercase">顯示選項</h2>
-                </div>
-                <div class="grid grid-cols-1 gap-3">
-                    <button id="btn-mesh" onclick="toggleMesh()" class="w-full px-4 py-4 rounded-xl text-base font-bold shadow-lg transition-all active:scale-95">顯示/隱藏立體</button>
-                    <button id="btn-riemann" onclick="toggleRiemann()" class="w-full px-4 py-4 rounded-xl text-base font-bold shadow-md transition-all active:scale-95">黎散圓盤 (Riemann)</button>
-                    <button id="btn-disc" onclick="toggleDisc()" class="w-full px-4 py-4 rounded-xl text-base font-bold shadow-md transition-all active:scale-95">單個切片 (Disc)</button>
-                </div>
-                
-                <div id="nControl" class="p-5 bg-indigo-50 rounded-2xl border border-indigo-100 hidden">
-                    <div class="flex justify-between text-xs font-bold text-indigo-700 mb-2 uppercase tracking-widest">
-                        <span id="lang-riemann">圓盤數量 (n)</span>
-                        <span id="nValue" class="text-indigo-900 font-black">10</span>
+                    
+                    <div id="angleControlGroup">
+                        <div class="flex justify-between text-xs font-bold text-slate-500 mb-1 uppercase tracking-widest">
+                            <span id="lang-rotAngle">旋轉角度</span>
+                            <span id="angleValue" class="text-blue-600 font-black">0°</span>
+                        </div>
+                        <input type="range" id="angleSlider" min="270" max="630" value="270" oninput="handleAngleInput(this.value)">
                     </div>
-                    <input type="range" id="nSlider" min="2" max="100" value="10" oninput="handleNInput(this.value)">
                 </div>
 
-                <div id="sliceControl" class="p-5 bg-amber-50 rounded-2xl border border-amber-200 hidden">
+                <div id="sliceControl" class="p-6 bg-amber-50 rounded-2xl border border-amber-200 hidden">
                     <div class="flex justify-between text-xs font-bold text-amber-700 mb-2 uppercase tracking-widest">
-                        <span id="lang-slice-disc">切片位置 (x)</span>
+                        <span id="lang-sliceDisc">切片位置 (x)</span>
                         <span id="sliceValue" class="text-amber-900 font-black">x = 2.0</span>
                     </div>
                     <input type="range" id="sliceSlider" min="0" max="400" value="200" oninput="handleSliceInput(this.value)">
                 </div>
             </div>
 
-            <!-- Math Section -->
-            <div class="bg-slate-900 p-8 rounded-3xl text-white shadow-2xl flex flex-col justify-center relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-                <h2 id="lang-math-title" class="font-black text-blue-400 mb-6 border-b border-slate-800 pb-3 text-sm uppercase tracking-[0.2em] relative">數學原理</h2>
-                <div class="space-y-6 relative">
-                    <p id="lang-math-desc" class="text-sm text-slate-400 font-medium leading-relaxed">體積為圓盤面積的積分：</p>
-                    <div class="bg-slate-800/50 p-4 rounded-2xl text-center border border-white/5">
-                        <span class="text-xl text-yellow-400 font-serif italic">dV = π[f(x)]² dx</span>
+            <!-- View Options -->
+            <div class="space-y-6">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-6 bg-green-600 rounded-full"></div>
+                    <h2 id="lang-dispTitle" class="text-xl font-black text-slate-800 tracking-tight uppercase">顯示選項</h2>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button id="btn-mesh" onclick="toggleMesh()" class="w-full px-4 py-4 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95">顯示/隱藏立體</button>
+                    <button id="btn-riemann" onclick="toggleRiemann()" class="w-full px-4 py-4 rounded-xl text-sm font-bold shadow-md transition-all active:scale-95">黎散圓盤 (Riemann)</button>
+                    <button id="btn-disc" onclick="toggleDisc()" class="w-full px-4 py-4 rounded-xl text-sm font-bold shadow-md transition-all active:scale-95">單個切片 (Disc)</button>
+                </div>
+                
+                <div id="nControl" class="p-6 bg-indigo-50 rounded-2xl border border-indigo-100 hidden">
+                    <div class="flex justify-between text-xs font-bold text-indigo-700 mb-2 uppercase tracking-widest">
+                        <span id="lang-riemannLabel">圓盤數量 (n)</span>
+                        <span id="nValue" class="text-indigo-900 font-black">10</span>
                     </div>
-                    <div class="bg-blue-600 p-4 rounded-2xl text-center shadow-lg">
-                        <span class="text-2xl font-serif">V = π ∫ [f(x)]² dx</span>
-                    </div>
+                    <input type="range" id="nSlider" min="2" max="100" value="10" oninput="handleNInput(this.value)">
                 </div>
             </div>
         </div>
@@ -224,28 +208,53 @@
                 funcSelect: "函數選擇",
                 rotAngle: "旋轉角度",
                 sliceDisc: "切片位置 (x)",
-                riemann: "圓盤數量 (n)",
+                riemannLabel: "圓盤數量 (n)",
                 dispTitle: "顯示選項",
-                mathTitle: "數學原理",
-                mathDesc: "體積為圓盤面積的積分：",
+                btnMesh: "顯示/隱藏立體",
+                btnRiemann: "黎散圓盤",
+                btnDisc: "單個切片",
                 btnLang: "English / 中文"
             },
             en: {
-                dataTitle: "Slice Info",
+                dataTitle: "Slice Information",
                 pos: "Position",
                 rad: "Radius",
                 area: "Area",
-                paramTitle: "Parameters",
-                funcSelect: "Function",
+                paramTitle: "Parameter Control",
+                funcSelect: "Function Selection",
                 rotAngle: "Rotation Angle",
-                sliceDisc: "Slice Pos (x)",
-                riemann: "Discs (n)",
+                sliceDisc: "Slice Position (x)",
+                riemannLabel: "Number of Discs (n)",
                 dispTitle: "Display Options",
-                mathTitle: "Math Theory",
-                mathDesc: "Volume is the integral of area:",
+                btnMesh: "Show/Hide Solid",
+                btnRiemann: "Riemann Discs",
+                btnDisc: "Single Slice",
                 btnLang: "中文 / English"
             }
         };
+
+        function toggleLanguage() {
+            currentLang = (currentLang === 'zh') ? 'en' : 'zh';
+            const dict = i18n[currentLang];
+
+            document.getElementById('btn-lang-text').innerText = dict.btnLang;
+            document.getElementById('lang-dataTitle').innerText = dict.dataTitle;
+            document.getElementById('lang-pos').innerText = dict.pos;
+            document.getElementById('lang-rad').innerText = dict.rad;
+            document.getElementById('lang-area').innerText = dict.area;
+            document.getElementById('lang-paramTitle').innerText = dict.paramTitle;
+            document.getElementById('lang-funcSelect').innerText = dict.funcSelect;
+            document.getElementById('lang-rotAngle').innerText = dict.rotAngle;
+            document.getElementById('lang-sliceDisc').innerText = dict.sliceDisc;
+            document.getElementById('lang-riemannLabel').innerText = dict.riemannLabel;
+            document.getElementById('lang-dispTitle').innerText = dict.dispTitle;
+            
+            document.getElementById('btn-mesh').innerText = dict.btnMesh;
+            document.getElementById('btn-riemann').innerText = dict.btnRiemann;
+            document.getElementById('btn-disc').innerText = dict.btnDisc;
+
+            updateGeometry();
+        }
 
         function init() {
             scene = new THREE.Scene();
@@ -264,7 +273,6 @@
             pl.position.set(10, 15, 10);
             scene.add(pl);
 
-            // Axes
             const addAxis = (end, color) => {
                 const mat = new THREE.LineBasicMaterial({ color: color, linewidth: 2, transparent: true, opacity: 0.6 });
                 const geom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), end]);
@@ -301,9 +309,11 @@
                 const x = (vector.x + 1) * window.innerWidth / 2;
                 const y = -(vector.y - 1) * (window.innerHeight * 0.65) / 2;
                 const el = document.getElementById(elId);
-                el.style.left = x + 'px';
-                el.style.top = y + 'px';
-                el.style.display = vector.z > 1 ? 'none' : 'block';
+                if (el) {
+                    el.style.left = x + 'px';
+                    el.style.top = y + 'px';
+                    el.style.display = vector.z > 1 ? 'none' : 'block';
+                }
             };
             project(pos_x, 'label-x');
             project(pos_y, 'label-y');
@@ -388,21 +398,20 @@
                 document.getElementById('data-r').innerText = r.toFixed(2);
                 document.getElementById('data-a').innerText = (Math.PI * r * r).toFixed(2);
             }
-
-            const isRotatable = showMesh || showRiemann || showDisc;
-            document.getElementById('angleControlGroup').className = isRotatable ? '' : 'control-group-hidden';
             
-            const updateBtn = (id, active) => {
+            const dict = i18n[currentLang];
+            const updateBtn = (id, active, labelKey) => {
                 const btn = document.getElementById(id);
+                btn.innerText = dict[labelKey];
                 if (active) {
-                    btn.className = "w-full px-4 py-4 rounded-xl text-base font-bold shadow-lg transition-all active:scale-95 bg-blue-600 text-white";
+                    btn.className = "w-full px-4 py-4 rounded-xl text-xs font-black shadow-lg transition-all active:scale-95 bg-blue-600 text-white uppercase tracking-wider";
                 } else {
-                    btn.className = "w-full px-4 py-4 rounded-xl text-base font-bold shadow-md transition-all active:scale-95 bg-slate-200 text-slate-700";
+                    btn.className = "w-full px-4 py-4 rounded-xl text-xs font-black shadow-md transition-all active:scale-95 bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wider";
                 }
             };
-            updateBtn('btn-mesh', showMesh);
-            updateBtn('btn-riemann', showRiemann);
-            updateBtn('btn-disc', showDisc);
+            updateBtn('btn-mesh', showMesh, 'btnMesh');
+            updateBtn('btn-riemann', showRiemann, 'btnRiemann');
+            updateBtn('btn-disc', showDisc, 'btnDisc');
             
             document.getElementById('nControl').classList.toggle('hidden', !showRiemann);
             document.getElementById('sliceControl').classList.toggle('hidden', !showDisc);
@@ -442,8 +451,8 @@
         }
 
         function setupInteractions() {
-            let dragging = false, px = 0, py = 0;
-            let initialPinchDist = 0;
+            let dragging = false, px = 0, py = 0, initialPinchDist = 0;
+            const container = document.getElementById('canvas-container');
 
             const move = (nx, ny) => {
                 if(!dragging) return;
@@ -458,13 +467,7 @@
                 px = nx; py = ny;
             };
 
-            const container = document.getElementById('canvas-container');
-            
-            container.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                zoom(e.deltaY > 0 ? 1.1 : 0.9);
-            }, { passive: false });
-
+            container.addEventListener('wheel', (e) => { e.preventDefault(); zoom(e.deltaY > 0 ? 1.1 : 0.9); }, { passive: false });
             container.addEventListener('mousedown', (e) => { dragging = true; px = e.clientX; py = e.clientY; });
             window.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
             window.addEventListener('mouseup', () => dragging = false);
@@ -474,9 +477,7 @@
                     dragging = false;
                     initialPinchDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
                 } else {
-                    dragging = true; 
-                    px = e.touches[0].clientX; 
-                    py = e.touches[0].clientY; 
+                    dragging = true; px = e.touches[0].clientX; py = e.touches[0].clientY; 
                 }
             }, { passive: false });
 
@@ -484,27 +485,13 @@
                 if (e.touches.length === 2) {
                     const currentDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
                     if (initialPinchDist > 0) {
-                        const factor = initialPinchDist / currentDist;
-                        zoom(factor);
+                        zoom(initialPinchDist / currentDist);
                         initialPinchDist = currentDist;
                     }
-                } else if(dragging) { 
-                    move(e.touches[0].clientX, e.touches[0].clientY); 
-                } 
+                } else if(dragging) { move(e.touches[0].clientX, e.touches[0].clientY); } 
             }, { passive: false });
 
             window.addEventListener('touchend', () => { dragging = false; initialPinchDist = 0; });
-        }
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'zh' ? 'en' : 'zh';
-            const t = i18n[currentLang];
-            document.getElementById('btn-lang-text').innerText = t.btnLang;
-            document.getElementById('lang-data-title').innerText = t.dataTitle;
-            ['pos','rad','area','paramTitle','funcSelect','rotAngle','sliceDisc','riemann','dispTitle','mathTitle','mathDesc'].forEach(k => {
-                const el = document.getElementById('lang-'+k);
-                if(el) el.innerText = t[k];
-            });
         }
 
         function animate() { 
