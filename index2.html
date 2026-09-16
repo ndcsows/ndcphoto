@@ -973,14 +973,6 @@
             if (adminEmails.includes(email)) {
                 showAdminPage();
             } else {
-                // 檢查是否為第一個用戶（自動設置為管理員）
-                const isFirstUser = await checkIfFirstUser();
-                if (isFirstUser) {
-                    await setFirstAdmin(email);
-                    showFirstAdminSetup();
-                    return;
-                }
-                
                 const studentDoc = await getDoc(doc(firebaseDB, 'students', email));
                 if (studentDoc.exists()) {
                     currentStudent = studentDoc.data();
@@ -1003,36 +995,6 @@
             }
         }
 
-        // 檢查是否為第一個用戶
-        async function checkIfFirstUser() {
-            try {
-                // 檢查是否有任何學生資料
-                const studentsSnapshot = await getDocs(collection(firebaseDB, 'students'));
-                // 檢查是否有任何學生記錄
-                const recordsSnapshot = await getDocs(collection(firebaseDB, 'student_records'));
-                // 檢查是否有管理員設置
-                const adminDoc = await getDoc(doc(firebaseDB, 'settings', 'admins'));
-                
-                return studentsSnapshot.empty && recordsSnapshot.empty && !adminDoc.exists();
-            } catch (error) {
-                console.error('檢查首次用戶失敗:', error);
-                return false;
-            }
-        }
-
-        // 設置第一個管理員
-        async function setFirstAdmin(email) {
-            try {
-                adminEmails = [email];
-                await setDoc(doc(firebaseDB, 'settings', 'admins'), {
-                    emails: adminEmails,
-                    createdAt: new Date(),
-                    createdBy: email
-                });
-            } catch (error) {
-                console.error('設置管理員失敗:', error);
-            }
-        }
 
         // 顯示頁面
         function showLoginPage() {
