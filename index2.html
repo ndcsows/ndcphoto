@@ -1635,6 +1635,7 @@
                 
                 console.log('資料儲存成功！');
                 showAlert('學生資料已新增成功！');
+                allStudentsCache = null;
                 document.getElementById('studentForm').reset();
                 
             } catch (error) {
@@ -1987,7 +1988,7 @@
                 }
                 
                 showAlert('學生資料已成功更新！');
-                
+                allStudentsCache = null;
                 // 重新載入學生列表
                 await loadAllStudentsForEdit();
                 
@@ -2070,6 +2071,8 @@
                 await deleteDoc(doc(firebaseDB, 'students', email));
                 
                 showAlert(`學生「${name}」的所有資料已成功刪除`);
+
+                allStudentsCache = null;
                 
                 // 重新載入學生列表
                 await loadAllStudentsForEdit();
