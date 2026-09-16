@@ -896,6 +896,7 @@
         });
 
         // 全局變數
+        let allStudentsCache = null;
         let currentUser = null;
         let currentStudent = null;
         let currentOrder = null; // 儲存當前訂單
@@ -1725,12 +1726,26 @@
         // 載入所有學生供編輯
         async function loadAllStudentsForEdit() {
             try {
+                // 【快取機制】如果快取已經有資料，直接拿來用，消耗 0 次 Firebase 讀取！
+                if (allStudentsCache !== null) {
+                    console.log("⚡ 使用本地快取學生資料（編輯頁面）");
+                    allStudentsData = allStudentsCache;
+                    setupEditClassFilter();
+                    displayStudentsGrid(allStudentsData);
+                    updateEditFilteredCount(allStudentsData.length);
+                    return;
+                }
+        
+                console.log("📡 從 Firebase 載入學生資料...");
                 const studentsSnapshot = await getDocs(collection(firebaseDB, 'students'));
                 allStudentsData = [];
                 
                 studentsSnapshot.forEach((doc) => {
                     allStudentsData.push({ id: doc.id, ...doc.data() });
                 });
+                
+                // 將抓回來的資料存入快取
+                allStudentsCache = allStudentsData;
                 
                 setupEditClassFilter();
                 displayStudentsGrid(allStudentsData);
@@ -2121,15 +2136,22 @@
         // 載入學生狀態統一表格
         async function loadStudentStatusForAdmin() {
             try {
-                // 載入學生資料和統一的學生記錄
-                const [studentsSnapshot, recordsSnapshot] = await Promise.all([
-                    getDocs(collection(firebaseDB, 'students')),
-                    getDocs(collection(firebaseDB, 'student_records'))
-                ]);
-
-                // 創建每個學生的最新記錄映射
+                // 1. 學生資料直接從快取拿（如果沒有才去抓）
+                let studentsSnapshotData = allStudentsCache;
+                if (!studentsSnapshotData) {
+                    const studentsSnapshot = await getDocs(collection(firebaseDB, 'students'));
+                    studentsSnapshotData = [];
+                    studentsSnapshot.forEach((doc) => {
+                        studentsSnapshotData.push({ id: doc.id, ...doc.data() });
+                    });
+                    allStudentsCache = studentsSnapshotData; // 建立快取
+                }
+        
+                // 2. 記錄部分保持每次抓取最新的訂單狀態
+                const recordsSnapshot = await getDocs(collection(firebaseDB, 'student_records'));
+        
+                // 建立每個學生的最新記錄映射
                 const latestRecordsByEmail = {};
-
                 recordsSnapshot.forEach(doc => {
                     const record = doc.data();
                     const email = record.studentEmail;
@@ -2140,11 +2162,11 @@
                         latestRecordsByEmail[email] = { id: doc.id, ...record };
                     }
                 });
-
+        
                 const tbody = document.getElementById('studentsTableBody');
                 tbody.innerHTML = '';
-
-                if (studentsSnapshot.empty) {
+        
+                if (studentsSnapshotData.length === 0) {
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
@@ -2155,20 +2177,12 @@
                     updateCounts();
                     return;
                 }
-
-                // 將學生資料轉換為陣列並按班別和學號排序
-                const studentsArray = [];
-                studentsSnapshot.forEach((doc) => {
-                    studentsArray.push({ id: doc.id, ...doc.data() });
-                });
-
-                // 按班別和學號排序學生
-                const sortedStudents = studentsArray.sort((a, b) => {
-                    // 首先按班別排序
+        
+                // 排序學生
+                const sortedStudents = [...studentsSnapshotData].sort((a, b) => {
                     if (a.class !== b.class) {
                         return a.class.localeCompare(b.class, 'zh-TW', { numeric: true });
                     }
-                    // 如果班別相同，按學號排序
                     return a.id.localeCompare(b.id, 'zh-TW', { numeric: true });
                 });
 
